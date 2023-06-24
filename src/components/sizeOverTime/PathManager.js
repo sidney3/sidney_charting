@@ -1,9 +1,14 @@
-import { DEFAULT_OFFSETS, ONE_YEAR, SIX_MONTHS , X_DATA_POINTS, Y_DATA_POINTS} from "../../constants"
+import {
+  DEFAULT_OFFSETS,
+  ONE_YEAR,
+  SIX_MONTHS,
+  X_DATA_POINTS,
+  Y_DATA_POINTS,
+} from "../../constants"
 import { unix_to_MDY, ticks } from "../../utils"
 import * as d3 from "d3"
 
 export class PathManager {
-
   //params: {x_formula, pagePos, data}
   /*
   //from a given [x,y], get the current state
@@ -13,17 +18,17 @@ export class PathManager {
   */
 
   //will return 5 (formatted)
-  static get_datum(params){
+  static get_datum(params) {
     const time = params.x_formula.invert(params.pagePos.x)
-    
+
     let i = params.data.length - 1
 
-    while(params.data[i][0] > time && i > 0) {
+    while (params.data[i][0] > time && i > 0) {
       i -= 1
     }
     return {
-      "date": unix_to_MDY(time),
-      "datum": params.data[i][1]
+      date: unix_to_MDY(time),
+      datum: params.data[i][1],
     }
   }
 
@@ -32,15 +37,16 @@ export class PathManager {
   // 1. into a set of points within the graph bounds (height, width)
   // 2. into a d3 path
   */
-  static transform_dataset(params){
+  static transform_dataset(params) {
     const time_threshold = Date.now() - params.secs
-
     const filtered_data = params.data.filter(
       (data_point) => data_point[0] > time_threshold
     )
 
     if (filtered_data.length === 0) {
-      return null
+      return {
+        alert: "no_data",
+      }
     }
     const bounds = {
       x_min: Math.min(...filtered_data.map((d) => d[0])),
@@ -61,37 +67,40 @@ export class PathManager {
 
     return {
       path: d3
-      .line()
-      .x((d) => x_formula(d[0]))
-      .y((d) => y_formula(d[1]))
-      .curve(d3.curveBasis)
-      (filtered_data),
+        .line()
+        .x((d) => x_formula(d[0]))
+        .y((d) => y_formula(d[1]))
+        .curve(d3.curveBasis)(filtered_data),
       bounds: bounds,
       x_formula: x_formula,
-      data: filtered_data
+      y_formula: y_formula,
+      data: filtered_data,
+      alert: "none",
     }
   }
 
   /*generate the horizontal dashes for the graph */
-  static get_y_dashes(graph_height, graph_width){
-    const levels = ticks(DEFAULT_OFFSETS.y, graph_height - DEFAULT_OFFSETS.y, Y_DATA_POINTS)
-    const lines = levels.map(d => [d, d])
-    const paths = lines.map((l) => 
-      d3.line()
-        .x((d,i) => {
-          if(i === 0){
+  static get_y_dashes(graph_height, graph_width) {
+    const levels = ticks(
+      DEFAULT_OFFSETS.y,
+      graph_height - DEFAULT_OFFSETS.y,
+      Y_DATA_POINTS
+    )
+    const lines = levels.map((d) => [d, d])
+    const paths = lines.map((l) =>
+      d3
+        .line()
+        .x((d, i) => {
+          if (i === 0) {
             return DEFAULT_OFFSETS.x
-          }
-          else{
+          } else {
             return graph_width - DEFAULT_OFFSETS.x
           }
-        }
-        )
+        })
         .y((d) => {
-          return d})
-        (l)
+          return d
+        })(l)
     )
     return paths
-  
   }
 }

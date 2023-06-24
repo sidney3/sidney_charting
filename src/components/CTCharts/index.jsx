@@ -10,17 +10,34 @@ const PriceSOTdata = require("./mock_data/priceovertime.json").map((d) => [
   Math.max(0, d.Price),
 ])
 
+const largeBottlesOTdata = require("./mock_data/largebottlesovertime.json").map(
+  (d) => [Math.max(0, d.Date), Math.max(0, d.Cellared)]
+)
+
+function RenderDataPreview({ dataPreview, dataArr }) {
+  return(
+    dataArr.map((d, index) => {
+      return <span key={index}> {d.name}: {dataPreview[d.key]}</span>
+    }
+    )
+  )
+}
+
 function CTCharts() {
-  const [SOTData, setSOTData] = useState([
-    {
-      data: BottlesSOTdata,
-      name: "Bottles over Time",
-    },
+  const [dataArr, setDataArr] = useState([
     {
       data: PriceSOTdata,
       name: "Price over Time",
+      key: 1,
+    },
+    {
+      data: BottlesSOTdata,
+      name: "Bottles over Time",
+      key: 0,
     },
   ])
+
+  const [dataPreview, setDataPreview] = useState([2,5])
 
   //we pass data in the form
   /*
@@ -35,15 +52,27 @@ function CTCharts() {
 
   return (
     <div>
-      <p>{SOTData[0].name}</p>
-      <SizeOverTime h={200} w={600} data={SOTData} />
-      <SizeOverTime h={200} w={600} data={SOTData} />
+      <RenderDataPreview
+        dataPreview={dataPreview}
+        dataArr={dataArr}
+      />
+      <SizeOverTime
+        h={600}
+        w={600}
+        data={dataArr}
+        dataPreview={dataPreview}
+        setDataPreview={setDataPreview}
+      />
       <button
         onClick={() => {
-          setSOTData([
+          setDataArr([
             {
-              data: PriceSOTdata,
-              name: "Price over Time",
+              data: largeBottlesOTdata,
+              name: "Large Bottles over time data",
+            },
+            {
+              data: BottlesSOTdata,
+              name: "Bottles",
             },
           ])
         }}

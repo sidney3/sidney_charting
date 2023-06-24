@@ -5,13 +5,14 @@ import { GraphLine } from "./GraphLine"
 
 import {
   DEFAULT_OFFSETS,
+  ONE_DAY,
   ONE_YEAR,
   X_DATA_POINTS,
   Y_DATA_POINTS,
 } from "../../constants"
 import { ticks, unix_to_MDY } from "../../utils"
 
-function SizeOverTime({ h, w, data }) {
+function SizeOverTime({ h, w, data, dataPreview, setDataPreview }) {
   if (h <= DEFAULT_OFFSETS.y * 2 || w <= DEFAULT_OFFSETS.x * 2) {
     throw Error("Height or width exceeds default offset.")
   }
@@ -22,14 +23,41 @@ function SizeOverTime({ h, w, data }) {
     datum: "",
   })
   const [labelHidden, setLabelHidden] = useState(true)
-  const [timeView, setTimeView] = useState(20 * ONE_YEAR)
+  const [timeView, setTimeView] = useState(30 * ONE_YEAR)
+  const [vertPreview, setVertPreview] = useState(0)
 
   //keep a copy of the last path so that we can transition between lines
+  //const [oldState, setOldState] = useState({})
+
   const oldState = useRef({})
+  const x_formulas = useRef({})
+
   //we do not store this as a React state because we choose to manage it ourselves via
   //the D3 component. Leaving it to React unfortunately did not work
 
   const svgRef = useRef()
+
+  /**
+   * UseEffect block for rendering vertical line following users cursor
+   */
+  useEffect(() => {
+
+    const svg = d3.select(svgRef.current)
+
+    svg.selectAll('#vert-preview')
+      .data([vertPreview])
+      .join("path")
+      .attr("id", 'vert-preview')
+      .attr('d', (d) => {
+        const lineData = [[vertPreview, DEFAULT_OFFSETS.y], 
+      [vertPreview, h - DEFAULT_OFFSETS.y]]
+        return d3.line()
+          .x((a) => a[0])
+          .y((a) => a[1])
+          (lineData)
+      })
+      .attr("stroke", "black")
+  }, [vertPreview, h])
   /**
    * A secondary useEffect block.
    *
@@ -71,7 +99,8 @@ function SizeOverTime({ h, w, data }) {
       .attr("width", w)
       .attr("stroke", "black")
       .attr("fill", "transparent")
-  }, [h, w, data.length])
+  
+  }, [h, w, data.length, vertPreview])
   /**
    * The body of the program.
    *
@@ -83,7 +112,7 @@ function SizeOverTime({ h, w, data }) {
     data.forEach((d, i) => {
       const path_params = {
         index: i,
-        data: data[i],
+        data: data,
         svg: svgRef.current,
         chart_details: {
           height: h,
@@ -100,7 +129,20 @@ function SizeOverTime({ h, w, data }) {
           timeView: {
             get: timeView,
           },
-          oldDataRef: oldState,
+          oldDataRef: {
+            get: oldState
+          },
+          vertPreview: {
+            set: setVertPreview
+          },
+          x_formulas: {
+            get: x_formulas
+          },
+          dataPreview:{
+            get: dataPreview,
+            set: setDataPreview
+          }
+          
         },
       }
       all_bounds.push(GraphLine.load_line(path_params))
@@ -180,7 +222,7 @@ function SizeOverTime({ h, w, data }) {
           .selectAll(`#linegraph${index}`)
           .remove()
 
-        svg.selectAll(`#transparentlinegraph${index}`).remove()
+        svg.selectAll(`#g${index}`).remove()
       }
     }
   }, [data.length])
@@ -212,6 +254,15 @@ function SizeOverTime({ h, w, data }) {
       >
         {" "}
         1 Year{" "}
+      </button>
+      <button
+        onClick={() => {
+          setLabelHidden(true)
+          setTimeView(6 * 30 * ONE_DAY)
+        }}
+      >
+        {" "}
+        6 Month{" "}
       </button>
     </div>
   )
