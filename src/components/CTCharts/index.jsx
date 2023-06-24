@@ -1,5 +1,9 @@
 import React, { useEffect, useState } from "react"
 import SizeOverTime from "../sizeOverTime"
+import {Circle} from 'react-shapes';
+import { default_key_to_color } from "../../utils";
+import './index.css'
+
 
 const BottlesSOTdata = require("./mock_data/bottlesovertime.json").map((d) => [
   Math.max(0, d.Date),
@@ -16,8 +20,11 @@ const largeBottlesOTdata = require("./mock_data/largebottlesovertime.json").map(
 
 function RenderDataPreview({ dataPreview, dataArr }) {
   return(
-    dataArr.map((d, index) => {
-      return <span key={index}> {d.name}: {dataPreview[d.key]}</span>
+    dataArr.map((d) => {
+      return <div key={d.key} className='previewRow'>
+          <Circle r={10} fill = {{color: d.color ?? default_key_to_color(d.key)}}/>
+          <p>{d.name}: {dataPreview[d.key]} </p> 
+      </div>
     }
     )
   )
@@ -34,10 +41,11 @@ function CTCharts() {
       data: BottlesSOTdata,
       name: "Bottles over Time",
       key: 0,
+      color: "black"
     },
   ])
 
-  const [dataPreview, setDataPreview] = useState([2,5])
+  const [dataPreview, setDataPreview] = useState({0:0,1:1})
 
   //we pass data in the form
   /*

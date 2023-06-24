@@ -2,6 +2,7 @@ import { PathManager } from "./PathManager"
 import { interpolatePath } from "d3-interpolate-path"
 import * as d3 from "d3"
 import { DEFAULT_OFFSETS } from "../../constants"
+import { default_key_to_color } from "../../utils"
 
 export class GraphLine {
   //params:
@@ -103,7 +104,7 @@ export class GraphLine {
               return d.path
             })
             .attr("id", `linegraph${params.index}`)
-            .attr("stroke", "black")
+            .attr("stroke", params.data[params.index].color ?? d3.rgb(default_key_to_color(params.data[params.index].key)))
             .attr("fill", "none")
             .attr("stroke-width", "3"),
         (update) =>
