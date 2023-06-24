@@ -69,10 +69,7 @@ function CTCharts() {
             {
               data: largeBottlesOTdata,
               name: "Large Bottles over time data",
-            },
-            {
-              data: BottlesSOTdata,
-              name: "Bottles",
+              key: 1
             },
           ])
         }}

@@ -29,7 +29,7 @@ function SizeOverTime({ h, w, data, dataPreview, setDataPreview }) {
   //keep a copy of the last path so that we can transition between lines
   //const [oldState, setOldState] = useState({})
 
-  const oldState = useRef({})
+  const [oldGraph, setOldGraph] = useState({})
   const x_formulas = useRef({})
 
   //we do not store this as a React state because we choose to manage it ourselves via
@@ -129,14 +129,15 @@ function SizeOverTime({ h, w, data, dataPreview, setDataPreview }) {
           timeView: {
             get: timeView,
           },
-          oldDataRef: {
-            get: oldState
-          },
           vertPreview: {
             set: setVertPreview
           },
           x_formulas: {
             get: x_formulas
+          },
+          oldGraph: {
+            set: setOldGraph,
+            get: oldGraph
           },
           dataPreview:{
             get: dataPreview,
@@ -213,9 +214,10 @@ function SizeOverTime({ h, w, data, dataPreview, setDataPreview }) {
   data points
   */
   useEffect(() => {
+    
     const svg = d3.select(svgRef.current)
 
-    for (const [index, ignored] of Object.entries(oldState.current)) {
+    for (const [index, ignored] of Object.entries(oldGraph)) {
       if (index >= data.length) {
         svg
           //second path with the same line as the above
@@ -225,7 +227,7 @@ function SizeOverTime({ h, w, data, dataPreview, setDataPreview }) {
         svg.selectAll(`#g${index}`).remove()
       }
     }
-  }, [data.length])
+  }, [data.length, oldGraph])
 
   return (
     <div>

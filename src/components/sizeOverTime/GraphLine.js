@@ -19,10 +19,7 @@ export class GraphLine {
         get
         set
       }
-      oldData: {
-        get
-        set
-      }
+
       labelHidden: {
         get
         set
@@ -33,11 +30,15 @@ export class GraphLine {
       vertPreview: {
         set
       },
-      x_formulas: {
-        get,
+      dataPreview: {
+        get, 
         set
       },
-      dataPreview: {
+      oldGraph: {
+        set: setOldGraph,
+        get: oldGraph
+      },
+      xFormulas: {
         get, 
         set
       }
@@ -75,6 +76,8 @@ export class GraphLine {
       }
     }
 
+
+
     svg
       //the visible line
       .selectAll(`#linegraph${params.index}`)
@@ -87,7 +90,16 @@ export class GraphLine {
               // let old_data_store = {...params.states.oldData.get}
               // old_data_store[params.index] = d.path
               // params.states.oldData.set(old_data_store)
-              params.states.oldDataRef.get.current[params.index] = d.path
+              //params.states.oldDataRef.get.current[params.index] = d.path
+              const updateOldGraph = async () => {
+                params.states.oldGraph.set((currOldGraph) => {
+                  const oldGraphCopy = {...currOldGraph}
+                  oldGraphCopy[params.index] = d.path
+                  return oldGraphCopy
+                })
+                await new Promise(resolve => setTimeout(resolve, 0)); // Add a delay to see the updates
+              }
+              updateOldGraph()
               return d.path
             })
             .attr("id", `linegraph${params.index}`)
@@ -96,20 +108,26 @@ export class GraphLine {
             .attr("stroke-width", "3"),
         (update) =>
           update.transition().attrTween("d", (d) => {
-            // let old_data_store = {...params.states.oldData.get}
-            // const index_store = old_data_store[params.index]
-            // old_data_store[params.index] = d.path
-            // params.states.oldData.set(old_data_store)
-            const index_store = params.states.oldDataRef.get.current[params.index]
-            params.states.oldDataRef.get.current[params.index] = d.path
-            if (!index_store) {
+            const store = params.states.oldGraph.get[params.index]
+            const updateOldGraph = async () => {
+              params.states.oldGraph.set((currOldGraph) => {
+                const oldGraphCopy = {...currOldGraph}
+                oldGraphCopy[params.index] = d.path
+                return oldGraphCopy
+              })
+              await new Promise(resolve => setTimeout(resolve, 0)); // Add a delay to see the updates
+            }
+
+            updateOldGraph()
+
+            if(!store){
               return interpolatePath(d.path, d.path)
-            } else {
-              return interpolatePath(index_store, d.path)
+            }
+            else{
+              return interpolatePath(store, d.path)
             }
           })
       )
-
     //absolutely no idea why it's faster to make new such components rather than re-using old ones
     //but it absolutely is ????
     svg

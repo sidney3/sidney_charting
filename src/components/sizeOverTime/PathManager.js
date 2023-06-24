@@ -26,6 +26,7 @@ export class PathManager {
     while (params.data[i][0] > time && i > 0) {
       i -= 1
     }
+    
     return {
       date: unix_to_MDY(time),
       datum: params.data[i][1],
