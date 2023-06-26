@@ -13,7 +13,10 @@ export class GraphLine {
     chart_details: {
       height,
       width,
-    }
+    },
+    data_details: {
+      bounds
+    },
     states: 
     {
       infoLabel: {
@@ -38,10 +41,6 @@ export class GraphLine {
       oldGraph: {
         set: setOldGraph,
         get: oldGraph
-      },
-      xFormulas: {
-        get, 
-        set
       }
     }
   }
@@ -54,13 +53,11 @@ export class GraphLine {
   */
   static load_line(params) {
     const new_line = PathManager.transform_dataset({
-      data: params.data[params.index].data,
+      data: params.data[params.index],
       height: params.chart_details.height,
       width: params.chart_details.width,
-      secs: params.states.timeView.get,
+      formulae: params.data_details.formulae,
     })
-
-    params.states.x_formulas.get.current[params.index] = new_line.x_formula
 
     const svg = d3.select(params.svg)
 
@@ -76,9 +73,6 @@ export class GraphLine {
         y_max: 100,
       }
     }
-
-
-
     svg
       //the visible line
       .selectAll(`#linegraph${params.index}`)
@@ -88,23 +82,23 @@ export class GraphLine {
           enter
             .append("path")
             .attr("d", (d) => {
-              // let old_data_store = {...params.states.oldData.get}
-              // old_data_store[params.index] = d.path
-              // params.states.oldData.set(old_data_store)
-              //params.states.oldDataRef.get.current[params.index] = d.path
               const updateOldGraph = async () => {
                 params.states.oldGraph.set((currOldGraph) => {
-                  const oldGraphCopy = {...currOldGraph}
-                  oldGraphCopy[params.index] = d.path
+                  const oldGraphCopy = { ...currOldGraph }
+                  oldGraphCopy[params.index] = d
                   return oldGraphCopy
                 })
-                await new Promise(resolve => setTimeout(resolve, 0)); // Add a delay to see the updates
+                await new Promise((resolve) => setTimeout(resolve, 0)) // Add a delay to see the updates
               }
               updateOldGraph()
-              return d.path
+              return d
             })
             .attr("id", `linegraph${params.index}`)
-            .attr("stroke", params.data[params.index].color ?? d3.rgb(default_key_to_color(params.data[params.index].key)))
+            .attr(
+              "stroke",
+              params.data[params.index].color ??
+                d3.rgb(default_key_to_color(params.data_details.keys[params.index]))
+            )
             .attr("fill", "none")
             .attr("stroke-width", "3"),
         (update) =>
@@ -112,20 +106,19 @@ export class GraphLine {
             const store = params.states.oldGraph.get[params.index]
             const updateOldGraph = async () => {
               params.states.oldGraph.set((currOldGraph) => {
-                const oldGraphCopy = {...currOldGraph}
-                oldGraphCopy[params.index] = d.path
+                const oldGraphCopy = { ...currOldGraph }
+                oldGraphCopy[params.index] = d
                 return oldGraphCopy
               })
-              await new Promise(resolve => setTimeout(resolve, 0)); // Add a delay to see the updates
+              await new Promise((resolve) => setTimeout(resolve, 0)) // Add a delay to see the updates
             }
 
             updateOldGraph()
 
-            if(!store){
-              return interpolatePath(d.path, d.path)
-            }
-            else{
-              return interpolatePath(store, d.path)
+            if (!store) {
+              return interpolatePath(d, d)
+            } else {
+              return interpolatePath(store, d)
             }
           })
       )
@@ -142,37 +135,39 @@ export class GraphLine {
       .attr("width", params.chart_details.width - 2 * DEFAULT_OFFSETS.x)
       .on("mousemove", function (d) {
         //D3 is great - it will automatically give mouseover priority to one of the indices
-
         if (params.states.labelHidden.get) {
           params.states.labelHidden.set(false)
         }
 
         params.states.vertPreview.set(d.offsetX)
-        
+
         //we need to do this asyncronously as setState is an async function
         //we iterate through our different "graphs" (datums)
         const update_Preview = async () => {
-          for(let graph_index = 0; graph_index < params.data.length; graph_index += 1){
+          for (
+            let graph_index = 0;
+            graph_index < params.data.length;
+            graph_index += 1
+          ) {
             const data_point = PathManager.get_datum({
-              x_formula: params.states.x_formulas.get.current[graph_index],
+              x_formula: params.data_details.formulae.x_formula,
               pagePos: {
                 x: d.offsetX,
-                y: d.offsetY
+                y: d.offsetY,
               },
-              data: params.data[graph_index].data
+              data: params.data[graph_index],
             })
 
-            params.states.dataPreview.set(oldPreview => {
-              const previewCopy = {...oldPreview}
-              previewCopy[params.data[graph_index].key] = data_point.datum
+            params.states.dataPreview.set((oldPreview) => {
+              const previewCopy = { ...oldPreview }
+              previewCopy[params.data_details.keys[graph_index]] = data_point.datum
               return previewCopy
             })
-            await new Promise(resolve => setTimeout(resolve, 0)); // Add a delay to see the updates
-
-          }}
+            await new Promise((resolve) => setTimeout(resolve, 0)) // Add a delay to see the updates
+          }
+        }
         update_Preview()
-        })
-      
+      })
 
     return new_line.bounds
   }

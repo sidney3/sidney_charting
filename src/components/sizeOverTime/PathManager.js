@@ -17,12 +17,97 @@ export class PathManager {
   //[[3,5], [11,12]]
   */
 
+  //takes array of bounds objects
+  //for each, appends an entry
+  //[x,y]
+  //where x is the max of all time entries and
+  // y is the final value for such a datum
+  //also returns overall bounds
+
+  //returns:
+  // {
+  // filtered_data,
+  // bounds
+  //}
+
+  static pre_process_datums(datums, secs, height, width){
+    const time_threshold = Date.now() - secs
+
+    if(datums.length === 0){
+      return {
+        x_min: 0,
+        x_max: 100,
+        y_min: 0,
+        y_max: 100
+      }
+    }
+
+    let curr_bounds = {
+      x_min: Infinity,
+      x_max: 0,
+      y_min: Infinity,
+      y_max: 0,
+    }
+    let max_time_index = 0
+
+    let filtered_datums = []
+
+    datums.forEach((datum, index) => {
+
+      const filtered_datum = datum.data.filter((data_point) => data_point[0] > time_threshold)
+      //add a today entry
+      //breaks some of the example code that works into the future. This isn't an issue for
+      //real data
+      filtered_datum.push([Date.now(), filtered_datum.slice(-1)[0][1]])
+      filtered_datums.push(filtered_datum)
+      filtered_datum.forEach((entry) => {
+          if(curr_bounds['x_min'] > entry[0]){
+            curr_bounds['x_min'] = entry[0]
+          }
+          if(curr_bounds['x_max'] < entry[0]){
+            curr_bounds['x_max'] = entry[0]
+            max_time_index = index
+          }
+          if(curr_bounds['y_min'] > entry[1]){
+            curr_bounds['y_min'] = entry[1]
+          }
+          if(curr_bounds['y_max'] < entry[1]){
+            curr_bounds['y_max'] = entry[1]
+          }
+      })
+    })
+
+    filtered_datums.forEach((datum, index) => {
+      if(index !== max_time_index && datum.slice(-1)[0][0] < curr_bounds.x_max){
+        filtered_datums[index].push([curr_bounds.x_max, datum.slice(-1)[0][1]])
+      }
+    })
+
+    const x_formula = d3
+      .scaleLinear()
+      .domain([curr_bounds.x_min, curr_bounds.x_max])
+      .range([DEFAULT_OFFSETS.x, width - DEFAULT_OFFSETS.x])
+
+    const y_formula = d3
+      .scaleLinear()
+      .domain([curr_bounds.y_min, curr_bounds.y_max])
+      .range([height - DEFAULT_OFFSETS.y, DEFAULT_OFFSETS.y])
+
+
+    return {
+      bounds: curr_bounds,
+      formulae: {
+        x_formula: x_formula,
+        y_formula: y_formula
+      },
+      filtered_data: filtered_datums,
+    }
+  }
+
   //will return 5 (formatted)
   static get_datum(params) {
     const time = params.x_formula.invert(params.pagePos.x)
-
     let i = params.data.length - 1
-
     while (params.data[i][0] > time && i > 0) {
       i -= 1
     }
@@ -32,52 +117,32 @@ export class PathManager {
       datum: params.data[i][1],
     }
   }
-
-  //params: {data, height, width, secs}
-  /*Scale a dataset of arbitrary points [[x,y],[x,y],...]
-  // 1. into a set of points within the graph bounds (height, width)
-  // 2. into a d3 path
-  */
-  static transform_dataset(params) {
-    const time_threshold = Date.now() - params.secs
-    const filtered_data = params.data.filter(
-      (data_point) => data_point[0] > time_threshold
-    )
-
-    if (filtered_data.length === 0) {
-      return {
-        alert: "no_data",
-      }
-    }
-    const bounds = {
-      x_min: Math.min(...filtered_data.map((d) => d[0])),
-      x_max: Math.max(...filtered_data.map((d) => d[0])),
-      y_min: Math.min(...filtered_data.map((d) => d[1])),
-      y_max: Math.max(...filtered_data.map((d) => d[1])),
-    }
-
+  //params: height, width, bounds
+  static get_formulae(params){
     const x_formula = d3
       .scaleLinear()
-      .domain([bounds.x_min, bounds.x_max])
+      .domain([params.bounds.x_min, params.bounds.x_max])
       .range([DEFAULT_OFFSETS.x, params.width - DEFAULT_OFFSETS.x])
 
     const y_formula = d3
       .scaleLinear()
-      .domain([bounds.y_min, bounds.y_max])
+      .domain([params.bounds.y_min, params.bounds.y_max])
       .range([params.height - DEFAULT_OFFSETS.y, DEFAULT_OFFSETS.y])
 
     return {
-      path: d3
-        .line()
-        .x((d) => x_formula(d[0]))
-        .y((d) => y_formula(d[1]))
-        .curve(d3.curveBasis)(filtered_data),
-      bounds: bounds,
       x_formula: x_formula,
-      y_formula: y_formula,
-      data: filtered_data,
-      alert: "none",
+      y_formula: y_formula
     }
+  }
+
+  
+  //params: {height, width, formulae, data}
+  static transform_dataset(params) {
+    return d3
+        .line()
+        .x((d) => params.formulae.x_formula(d[0]))
+        .y((d) => params.formulae.y_formula(d[1]))
+        .curve(d3.curveBasis)(params.data)
   }
 
   /*generate the horizontal dashes for the graph */

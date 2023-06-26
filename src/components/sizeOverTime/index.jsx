@@ -30,7 +30,6 @@ function SizeOverTime({ h, w, data, dataPreview, setDataPreview }) {
   //const [oldState, setOldState] = useState({})
 
   const [oldGraph, setOldGraph] = useState({})
-  const x_formulas = useRef({})
 
   //we do not store this as a React state because we choose to manage it ourselves via
   //the D3 component. Leaving it to React unfortunately did not work
@@ -108,12 +107,25 @@ function SizeOverTime({ h, w, data, dataPreview, setDataPreview }) {
    * and then render the x and y axes accordingly
    */
   useEffect(() => {
-    let all_bounds = []
+
+    //TODO: pre-process data to get mins/maxes
+    //and append max zero item to all non-max lists
+    //This can happen in SizeOverTime
+
+    const processed_data = PathManager.pre_process_datums(data, timeView,h,w)
+    
+
+    //let all_bounds = []
     data.forEach((d, i) => {
       const path_params = {
         index: i,
-        data: data,
+        data: processed_data.filtered_data,
         svg: svgRef.current,
+        data_details: {
+          bounds: processed_data.large_bounds,
+          formulae: processed_data.formulae,
+          keys: data.map((d) => d.key)
+        },
         chart_details: {
           height: h,
           width: w,
@@ -132,9 +144,6 @@ function SizeOverTime({ h, w, data, dataPreview, setDataPreview }) {
           vertPreview: {
             set: setVertPreview
           },
-          x_formulas: {
-            get: x_formulas
-          },
           oldGraph: {
             set: setOldGraph,
             get: oldGraph
@@ -146,9 +155,10 @@ function SizeOverTime({ h, w, data, dataPreview, setDataPreview }) {
           
         },
       }
-      all_bounds.push(GraphLine.load_line(path_params))
+      //all_bounds.push(GraphLine.load_line(path_params))
+      GraphLine.load_line(path_params)
     })
-    const large_bounds = GraphLine.process_bounds(all_bounds)
+    //const large_bounds = GraphLine.process_bounds(all_bounds)
 
     const svg = d3.select(svgRef.current) // select svg ref
 
@@ -183,7 +193,7 @@ function SizeOverTime({ h, w, data, dataPreview, setDataPreview }) {
     //for this we just need the minimum and maximum y mins and maxes
     svg
       .selectAll("#y-axis-datums")
-      .data(ticks(large_bounds.y_min, large_bounds.y_max, X_DATA_POINTS))
+      .data(ticks(processed_data.bounds.y_min, processed_data.bounds.y_max, X_DATA_POINTS))
       .join("text")
       .text((d) => d)
       .attr("id", "y-axis-datums")
@@ -199,14 +209,14 @@ function SizeOverTime({ h, w, data, dataPreview, setDataPreview }) {
     )
     svg
       .selectAll("#x-axis-datums")
-      .data(ticks(large_bounds.x_min, large_bounds.x_max, Y_DATA_POINTS))
+      .data(ticks(processed_data.bounds.x_min, processed_data.bounds.x_max, Y_DATA_POINTS))
       .join("text")
       .text((d) => unix_to_MDY(d))
       .attr("id", "x-axis-datums")
       .attr("x", (d, i) => x_axis_coords[i])
       .attr("y", h - DEFAULT_OFFSETS.y / 2)
       .style("text-anchor", "middle")
-  }, [infoLabel, h, w, labelHidden, data, timeView])
+  }, [h, w, data, timeView])
 
   /*
   When we shorten the length of data (i.e. go from 2 data sets to 1),
