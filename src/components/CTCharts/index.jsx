@@ -65,7 +65,7 @@ function CTCharts() {
 
   return (
     <div>
-    <div>
+    {/* <div>
       <RenderDataPreview dataPreview={dataPreview} dataArr={dataArr} />
       <SizeOverTime
         h={600}
@@ -87,7 +87,7 @@ function CTCharts() {
       >
         Change Dataset
       </button>
-    </div>
+    </div> */}
       <PieChart height={500} width={500} data={wineByCountry} />
     </div>
   )
