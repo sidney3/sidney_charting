@@ -8,6 +8,8 @@ import {
 import { unix_to_MDY, ticks } from "../../utils"
 import * as d3 from "d3"
 
+
+
 export class PathManager {
   //params: {x_formula, pagePos, data}
   /*
@@ -55,10 +57,13 @@ export class PathManager {
     datums.forEach((datum, index) => {
 
       const filtered_datum = datum.data.filter((data_point) => data_point[0] > time_threshold)
+      filtered_datum.sort((a,b) => a[0] - b[0])
       //add a today entry
       //breaks some of the example code that works into the future. This isn't an issue for
       //real data
-      filtered_datum.push([Date.now(), filtered_datum.slice(-1)[0][1]])
+      if(filtered_datum.slice(-1)[0][0] < Date.now()){
+        filtered_datum.push([Date.now(), filtered_datum.slice(-1)[0][1]])
+      }
       filtered_datums.push(filtered_datum)
       filtered_datum.forEach((entry) => {
           if(curr_bounds['x_min'] > entry[0]){

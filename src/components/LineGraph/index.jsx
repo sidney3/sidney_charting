@@ -3,6 +3,13 @@ import * as d3 from "d3"
 import { PathManager } from "./PathManager"
 import { GraphLine } from "./GraphLine"
 
+//TODO to make final:
+
+// fix the broken dates
+// make it so when you click new date the current preview resets
+//better enddpoint handling (i.e. if filling in empty data
+//no data in filtering, handles)
+
 import {
   DEFAULT_OFFSETS,
   ONE_DAY,

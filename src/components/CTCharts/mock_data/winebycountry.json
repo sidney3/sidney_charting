@@ -1,0 +1,50 @@
+[
+  {
+    "Name": "USA",
+    "Cellared": 120,
+    "Children": [
+      {
+        "Name": "California",
+        "Cellared": 60,
+        "Children": null
+      },
+      {
+        "Name": "Washington",
+        "Cellared": 60,
+        "Children": null
+      }
+    ]
+  },
+  {
+    "Name": "Belarus",
+    "Cellared": 80,
+    "Children": [
+      {
+        "Name": "Minsk",
+        "Cellared": 60,
+        "Children": null
+      },
+      {
+        "Name": "Gomel",
+        "Cellared": 20,
+        "Children": null
+      }
+    ]
+  },
+  {
+    "Name": "Bosnia",
+    "Cellared": 10,
+    "Children": [
+      {
+        "Name": "Tuzla",
+        "Cellared": 5,
+        "Children": null
+      },
+      {
+        "Name": "Zvornik",
+        "Cellared": 5,
+        "Children": null
+      }
+    ]
+  }
+]

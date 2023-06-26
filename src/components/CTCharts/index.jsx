@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from "react"
-import SizeOverTime from "../sizeOverTime"
+import SizeOverTime from "../LineGraph"
 import { Circle } from "react-shapes"
 import { default_key_to_color } from "../../utils"
+import PieChart from "../PieChart"
 import "./index.css"
 
 const BottlesSOTdata = require("./mock_data/bottlesovertime.json").map((d) => [
@@ -16,6 +17,8 @@ const PriceSOTdata = require("./mock_data/priceovertime.json").map((d) => [
 const largeBottlesOTdata = require("./mock_data/largebottlesovertime.json").map(
   (d) => [Math.max(0, d.Date), Math.max(0, d.Cellared)]
 )
+
+const wineByCountry = require("./mock_data/winebycountry.json")
 
 function RenderDataPreview({ dataPreview, dataArr }) {
   return dataArr.map((d) => {
@@ -62,6 +65,7 @@ function CTCharts() {
 
   return (
     <div>
+    <div>
       <RenderDataPreview dataPreview={dataPreview} dataArr={dataArr} />
       <SizeOverTime
         h={600}
@@ -83,6 +87,8 @@ function CTCharts() {
       >
         Change Dataset
       </button>
+    </div>
+      <PieChart height={500} width={500} data={wineByCountry} />
     </div>
   )
 }
