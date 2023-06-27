@@ -5,6 +5,8 @@ import { render } from "@testing-library/react"
 function PieChart({ width, height, data }) {
   const svgRef = useRef()
 
+
+
   useEffect(() => {
     //svg within SVG
     const svg = d3
@@ -20,11 +22,6 @@ function PieChart({ width, height, data }) {
     const initial_radius = 100
     const inner_radius = 60
 
-    const test_data = [
-      { store: 2, radius: initial_radius, text: "USA" },
-      { store: 6, radius: initial_radius, text: "France" },
-    ]
-
     const transformed_data = data.map((d) => {
       return {
         store: d.Cellared,
@@ -36,23 +33,12 @@ function PieChart({ width, height, data }) {
 
     let curr_data = transformed_data
 
-    let erased_index = -1
 
     const colorScale = d3
       .scaleLinear()
       .domain([0, curr_data.length])
       .range(["maroon", "tan"])
-      // console.log(d3.range(5))
-
       .range(["maroon", "tan"])
-
-    const colorFunc = (i) => {
-      if (i === erased_index) {
-        return "transparent"
-      } else {
-        return colorScale(i)
-      }
-    }
 
     const arc = d3
       .arc()
@@ -81,13 +67,23 @@ function PieChart({ width, height, data }) {
     }
 
     let preview_locations = []
-    let waiting_on_transition = false
     
-    const render_preview = (startAngle, endAngle, previewData, direction, index, initial) => {
+    //params:
+    /**
+     * {
+     *  measurements: {startAngle, endAngle, min_radius, max_radius},
+     *  config: {direction, initial},
+     *  index,
+     *  data
+     * }
+     * 
+     */
+    const render_preview = (params) => {
+      //genius idea: we can just pass in the initial and target radii ! ! ! !
       const previewPie = d3
         .pie()
-        .startAngle(startAngle)
-        .endAngle(endAngle)
+        .startAngle(params.measurements.startAngle)
+        .endAngle(params.measurements.endAngle)
         .padAngle(0.02)
         .value((d) => d.store)
         .sort(null)
@@ -95,51 +91,48 @@ function PieChart({ width, height, data }) {
       const previewArc = (r) =>
         d3
           .arc()
-          .innerRadius(initial_radius)
-          .outerRadius(initial_radius + r)
+          .innerRadius(params.measurements.min_radius)
+          .outerRadius(params.measurements.min_radius + r)
 
       const previewColors = d3
         .scaleLinear()
-        .domain([0, previewData.length])
+        .domain([0, params.data.length])
         .range(["yellow", "pink"])
 
-      let processed_preview_data = previewPie(previewData)
+    let processed_preview_data = previewPie(params.data)
      svg
-      .selectAll(`#previewPie${index}`)
+      .selectAll(`#previewPie${params.index}`)
       .data(processed_preview_data)
       .join(
             (enter) => enter.append("path"),
             (update) => update
             .transition()
-            .duration(100)
+            .duration(500)
 
             .tween('preview-tween', function() {
-              const start_radius = preview_locations[index] ?? 0
+              const start_radius = preview_locations[params.index] ?? 0
               let target_radius
-              if(initial) {
+              if(params.config.initial) {
                 target_radius = start_radius
               }
-              else if(direction){
-                target_radius = 30
+              else if(params.config.direction){
+                target_radius = params.measurements.max_radius - params.measurements.min_radius
               }
               else{
                 target_radius = 0
               }
               return function(t){
-                console.log("arc path: ", previewPie(previewData))
+                console.log("arc path: ", previewPie(params.data))
                 const radius = d3.interpolate(start_radius, target_radius)(t)
-                preview_locations[index] = radius
+                preview_locations[params.index] = radius
                 svg
-                .selectAll(`#previewPie${index}`)
+                .selectAll(`#previewPie${params.index}`)
                 .attr('d', previewArc(radius))
-                //force a refresh
-                processed_preview_data.push(null)
-                processed_preview_data.pop()
               }
  
             })
             )
-          .attr("id", `previewPie${index}`)
+          .attr("id", `previewPie${params.index}`)
           .attr("fill", (d, i) => previewColors(i))
     }
 
@@ -156,26 +149,35 @@ function PieChart({ width, height, data }) {
               .transition()
               .duration(200)
               .attr("d", arc)
-              .attr("fill", (d, i) => colorFunc(i))
+              .attr("fill", (d, i) => colorScale(i))
           }
         )
         .attr("id", "piePath")
         .on("mouseenter", function (d, i) {
-          // i.data.radius += 10
-          //render_pie()
-
           invis_text_index = i.index
-          render_pie_text()
+          render_pie_text(pie, curr_data)
           const childData = i.data.children.map((child) => {
             return { store: child.Cellared }
           })
           console.log("entering index", i.index)
-
-          // if(!preview_locations[index]){
-
-          // }
-          render_preview(i.startAngle, i.endAngle, childData, false, i.index, true)
-          render_preview(i.startAngle, i.endAngle, childData, true, i.index, false)
+          const render_preview_params = {
+            measurements: {
+              startAngle: i.startAngle,
+              endAngle: i.endAngle,
+              min_radius: initial_radius,
+              max_radius: initial_radius + 30
+            },
+            config: {
+              direction: true,
+              initial: false
+            },
+            index: i.index,
+            data: childData
+          }
+          let dummy_preview_params = {...render_preview_params}
+          dummy_preview_params.config.initial = true
+          render_preview(dummy_preview_params)
+          render_preview(render_preview_params)
         })
         .on("mouseleave", function (d, i) {
           invis_text_index = -1
@@ -186,14 +188,15 @@ function PieChart({ width, height, data }) {
           console.log("exiting index", i.index)
           render_preview(i.startAngle, i.endAngle, childData, false, i.index, false)
           render_pie()
-          render_pie_text()
+          render_pie_text(pie, curr_data)
         })
     }
 
-    const render_pie_text = () => {
+    const render_pie_text = (pie_func, input_data) => {
+      console.log(pie_func)
       svg
         .selectAll("#pieText")
-        .data(pie(curr_data))
+        .data(pie_func(input_data))
         .join(
           (enter) =>
             enter
@@ -226,7 +229,7 @@ function PieChart({ width, height, data }) {
         .style("font-size", 12) //whereeee do I put the text to make it look not awful???
     }
     render_pie()
-    render_pie_text()
+    render_pie_text(pie, curr_data)
   }, [height, width, data])
 
   return (
