@@ -22,35 +22,33 @@ function PieChart({ width, height, data }) {
 
     const test_data = [
       { store: 2, radius: initial_radius, text: "USA" },
-      { store: 6, radius: initial_radius, text: "France"},
-      { store: 3, radius: initial_radius, text: "Denmark" },
-      { store: 5, radius: initial_radius, text: "Sweden" },
+      { store: 6, radius: initial_radius, text: "France" },
     ]
 
-    const transformed_data = data.map((d) => 
-      {
-        return {store: d.Cellared, text: d.Name, radius: initial_radius}
-      }
-    )
+    const transformed_data = data.map((d) => {
+      return { store: d.Cellared, text: d.Name, radius: initial_radius, children: d.Children }
+    })
+
+    let curr_data = transformed_data
 
     let erased_index = -1
+    let preview_visible = false
 
     const colorScale = d3
       .scaleLinear()
-      .domain([0, transformed_data.length])
+      .domain([0, curr_data.length])
       .range(["maroon", "tan"])
       // console.log(d3.range(5))
 
       .range(["maroon", "tan"])
 
     const colorFunc = (i) => {
-      if(i === erased_index){
-        return 'transparent'
-      }
-      else{
+      if (i === erased_index) {
+        return "transparent"
+      } else {
         return colorScale(i)
       }
-    } 
+    }
 
     const arc = d3
       .arc()
@@ -69,34 +67,121 @@ function PieChart({ width, height, data }) {
       })
       .sort(null)
 
-    let render_data = pie(transformed_data) // radius for label anchor
+
+    let invis_text_index = -1
+    const get_text_opacity = (i) => {
+      if(i === invis_text_index){
+        return 0
+      }
+      else{
+        return 1
+      }
+    }
+
+    
+
+    const render_preview = (startAngle, endAngle, previewData) => {
+      console.log("entering render preview")
+      const previewPie = d3
+        .pie()
+        .startAngle(startAngle)
+        .endAngle(endAngle)
+        .padAngle(0.02)
+        .value((d) => d.store)
+        .sort(null)
+
+      const previewArc = (r) => 
+        d3
+          .arc()
+          .innerRadius(initial_radius)
+          .outerRadius(initial_radius + r)
+      
+
+      const previewColors = d3
+      .scaleLinear()
+      .domain([0, previewData.length])
+      .range(["yellow", "pink"])
+
+      console.log(previewPie(previewData))
+
+      const renderPreviewPie = (r) => {
+        svg
+        .selectAll("#previewPie")
+        .data(previewPie(previewData))
+        .join(
+          (enter) => enter.append("path").attr('d', previewArc(r)),
+
+          (update) => update.attr('d', previewArc(r))
+        )
+        .attr('id', 'previewPie')
+        .attr('fill', (d,i) => previewColors(i))
+      }
+      
+
+      svg.transition()
+      .duration(2000)
+      .tween("previewTween", function() {
+        let start_radius
+        let target_radius
+        if(preview_visible) {
+          start_radius = 0
+          target_radius = 20
+        }
+        else{
+          start_radius = 20
+          target_radius = 0
+        }
+        
+
+        return function(t) {
+          const radius = d3.interpolate(start_radius, target_radius)(t)
+          console.log(radius)
+          renderPreviewPie(radius)
+        }
+      })
+
+      //renderPreviewPie(10)
+      
+    }
 
 
     const render_pie = () => {
       svg
         .selectAll("#piePath")
-        .data(render_data)
+        .data(pie(curr_data))
         .join(
           (enter) => {
-            return enter.append("path").attr("d", arc).attr("fill", (d, i) => colorFunc(i))
+            return enter.append("path").attr("d", arc)
           },
           (update) => {
-            return update.transition().duration(300).attr("fill", (d, i) => colorFunc(i))
+            return update
+              .transition()
+              .duration(200)
+              .attr("d", arc)
+              .attr("fill", (d, i) => colorFunc(i))
           }
         )
-      
         .attr("id", "piePath")
         .on("mouseenter", function (d, i) {
-          erased_index = i.index
-          i.data.radius += 10
-          render_pie()
-          render_pie_text()
-          console.log(i)
+          // i.data.radius += 10
+          //render_pie()
 
+          invis_text_index = i.index
+          render_pie_text()
+          const childData = i.data.children.map((child) => {
+            return {store: child.Cellared}
+          })
+          preview_visible = true
+          render_preview(i.startAngle, i.endAngle, childData)
         })
         .on("mouseleave", function (d, i) {
-          erased_index = -1
+          invis_text_index = -1
           i.data.radius = initial_radius
+          preview_visible = false
+          const childData = i.data.children.map((child) => {
+            return {store: child.Cellared}
+          })
+          render_preview(i.startAngle, i.endAngle, childData)
           render_pie()
           render_pie_text()
         })
@@ -104,24 +189,31 @@ function PieChart({ width, height, data }) {
 
     const render_pie_text = () => {
       svg
-        .selectAll('#pieText')
-        .data(render_data)
+        .selectAll("#pieText")
+        .data(pie(curr_data))
         .join(
-          (enter) => enter.append('text').text((d) => d.data.text),
-          (update) => update.text((d) => d.data.text)
+          (enter) => enter.append("text").text((d) => d.data.text).attr('opacity', 1),
+          (update) => update.transition().delay(200).attr('opacity', (i) => get_text_opacity(i.index)
+            )
         )
-        .attr('id', 'pieText')
-        .attr("transform", function(d) {
+        .attr("id", "pieText")
+        .attr("transform", function (d) {
           var c = arc.centroid(d),
-              xp = c[0],
-              yp = c[1],
-              // pythagorean theorem for hypotenuse
-          hp = Math.sqrt(xp*xp + yp*yp);
-          return "translate(" + (xp/hp * (initial_radius - inner_radius + 8)) +  ',' +
-             (yp/hp * (initial_radius - inner_radius + 8)) +  ")"; 
-      })
-        .style('text-anchor', 'middle')
-        .style('font-size', 12) //whereeee do I put the text to make it look not awful???
+            xp = c[0],
+            yp = c[1],
+            // pythagorean theorem for hypotenuse
+            hp = Math.sqrt(xp * xp + yp * yp)
+          return (
+            "translate(" +
+            (xp / hp) * (initial_radius + 30) +
+            "," +
+            (yp / hp) * (initial_radius + 30) +
+            ")"
+          )
+        })
+        .style("text-anchor", "middle")
+        .style('fill', 'black')
+        .style("font-size", 12) //whereeee do I put the text to make it look not awful???
     }
     render_pie()
     render_pie_text()
