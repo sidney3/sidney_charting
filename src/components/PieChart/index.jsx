@@ -26,13 +26,17 @@ function PieChart({ width, height, data }) {
     ]
 
     const transformed_data = data.map((d) => {
-      return { store: d.Cellared, text: d.Name, radius: initial_radius, children: d.Children }
+      return {
+        store: d.Cellared,
+        text: d.Name,
+        radius: initial_radius,
+        children: d.Children,
+      }
     })
 
     let curr_data = transformed_data
 
     let erased_index = -1
-    let preview_visible = false
 
     const colorScale = d3
       .scaleLinear()
@@ -67,21 +71,19 @@ function PieChart({ width, height, data }) {
       })
       .sort(null)
 
-
     let invis_text_index = -1
     const get_text_opacity = (i) => {
-      if(i === invis_text_index){
+      if (i === invis_text_index) {
         return 0
-      }
-      else{
+      } else {
         return 1
       }
     }
 
+    let preview_locations = []
+    let waiting_on_transition = false
     
-
-    const render_preview = (startAngle, endAngle, previewData) => {
-      console.log("entering render preview")
+    const render_preview = (startAngle, endAngle, previewData, direction, index, initial) => {
       const previewPie = d3
         .pie()
         .startAngle(startAngle)
@@ -90,60 +92,56 @@ function PieChart({ width, height, data }) {
         .value((d) => d.store)
         .sort(null)
 
-      const previewArc = (r) => 
+      const previewArc = (r) =>
         d3
           .arc()
           .innerRadius(initial_radius)
           .outerRadius(initial_radius + r)
-      
 
       const previewColors = d3
-      .scaleLinear()
-      .domain([0, previewData.length])
-      .range(["yellow", "pink"])
+        .scaleLinear()
+        .domain([0, previewData.length])
+        .range(["yellow", "pink"])
 
-      console.log(previewPie(previewData))
+      let processed_preview_data = previewPie(previewData)
+     svg
+      .selectAll(`#previewPie${index}`)
+      .data(processed_preview_data)
+      .join(
+            (enter) => enter.append("path"),
+            (update) => update
+            .transition()
+            .duration(100)
 
-      const renderPreviewPie = (r) => {
-        svg
-        .selectAll("#previewPie")
-        .data(previewPie(previewData))
-        .join(
-          (enter) => enter.append("path").attr('d', previewArc(r)),
-
-          (update) => update.attr('d', previewArc(r))
-        )
-        .attr('id', 'previewPie')
-        .attr('fill', (d,i) => previewColors(i))
-      }
-      
-
-      svg.transition()
-      .duration(2000)
-      .tween("previewTween", function() {
-        let start_radius
-        let target_radius
-        if(preview_visible) {
-          start_radius = 0
-          target_radius = 20
-        }
-        else{
-          start_radius = 20
-          target_radius = 0
-        }
-        
-
-        return function(t) {
-          const radius = d3.interpolate(start_radius, target_radius)(t)
-          console.log(radius)
-          renderPreviewPie(radius)
-        }
-      })
-
-      //renderPreviewPie(10)
-      
+            .tween('preview-tween', function() {
+              const start_radius = preview_locations[index] ?? 0
+              let target_radius
+              if(initial) {
+                target_radius = start_radius
+              }
+              else if(direction){
+                target_radius = 30
+              }
+              else{
+                target_radius = 0
+              }
+              return function(t){
+                console.log("arc path: ", previewPie(previewData))
+                const radius = d3.interpolate(start_radius, target_radius)(t)
+                preview_locations[index] = radius
+                svg
+                .selectAll(`#previewPie${index}`)
+                .attr('d', previewArc(radius))
+                //force a refresh
+                processed_preview_data.push(null)
+                processed_preview_data.pop()
+              }
+ 
+            })
+            )
+          .attr("id", `previewPie${index}`)
+          .attr("fill", (d, i) => previewColors(i))
     }
-
 
     const render_pie = () => {
       svg
@@ -169,19 +167,24 @@ function PieChart({ width, height, data }) {
           invis_text_index = i.index
           render_pie_text()
           const childData = i.data.children.map((child) => {
-            return {store: child.Cellared}
+            return { store: child.Cellared }
           })
-          preview_visible = true
-          render_preview(i.startAngle, i.endAngle, childData)
+          console.log("entering index", i.index)
+
+          // if(!preview_locations[index]){
+
+          // }
+          render_preview(i.startAngle, i.endAngle, childData, false, i.index, true)
+          render_preview(i.startAngle, i.endAngle, childData, true, i.index, false)
         })
         .on("mouseleave", function (d, i) {
           invis_text_index = -1
           i.data.radius = initial_radius
-          preview_visible = false
           const childData = i.data.children.map((child) => {
-            return {store: child.Cellared}
+            return { store: child.Cellared }
           })
-          render_preview(i.startAngle, i.endAngle, childData)
+          console.log("exiting index", i.index)
+          render_preview(i.startAngle, i.endAngle, childData, false, i.index, false)
           render_pie()
           render_pie_text()
         })
@@ -192,9 +195,16 @@ function PieChart({ width, height, data }) {
         .selectAll("#pieText")
         .data(pie(curr_data))
         .join(
-          (enter) => enter.append("text").text((d) => d.data.text).attr('opacity', 1),
-          (update) => update.transition().delay(200).attr('opacity', (i) => get_text_opacity(i.index)
-            )
+          (enter) =>
+            enter
+              .append("text")
+              .text((d) => d.data.text)
+              .attr("opacity", 1),
+          (update) =>
+            update
+              .transition()
+              .delay(200)
+              .attr("opacity", (i) => get_text_opacity(i.index))
         )
         .attr("id", "pieText")
         .attr("transform", function (d) {
@@ -212,7 +222,7 @@ function PieChart({ width, height, data }) {
           )
         })
         .style("text-anchor", "middle")
-        .style('fill', 'black')
+        .style("fill", "black")
         .style("font-size", 12) //whereeee do I put the text to make it look not awful???
     }
     render_pie()
@@ -225,7 +235,6 @@ function PieChart({ width, height, data }) {
       style={{
         height: height,
         width: width,
-        transform: "translate(" + width / 2 + "," + height / 2 + ")",
       }}
     ></svg>
   )

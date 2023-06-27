@@ -1,0 +1,13 @@
+{
+  "files": {
+    "main.css": "/github.com/Sidney3/static/css/main.f0e31fe1.css",
+    "main.js": "/github.com/Sidney3/static/js/main.f1dd2d78.js",
+    "index.html": "/github.com/Sidney3/index.html",
+    "main.f0e31fe1.css.map": "/github.com/Sidney3/static/css/main.f0e31fe1.css.map",
+    "main.f1dd2d78.js.map": "/github.com/Sidney3/static/js/main.f1dd2d78.js.map"
+  },
+  "entrypoints": [
+    "static/css/main.f0e31fe1.css",
+    "static/js/main.f1dd2d78.js"
+  ]
+}
