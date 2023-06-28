@@ -3,7 +3,8 @@ import SizeOverTime from "../LineGraph"
 import { Circle } from "react-shapes"
 import Test from "../PieChart/test_transition"
 import { default_key_to_color } from "../../utils"
-import PieChart from "../PieChart"
+import PieChart from "../PieChart/oldIndex"
+import PieCharts from "../PieChart"
 import "./index.css"
 
 const BottlesSOTdata = require("./mock_data/bottlesovertime.json").map((d) => [
@@ -89,8 +90,8 @@ function CTCharts() {
         Change Dataset
       </button>
     </div> */}
+      <PieCharts height={500} width={500} data={wineByCountry} />
       <PieChart height={500} width={500} data={wineByCountry} />
-      <Test/>
     </div>
   )
 }

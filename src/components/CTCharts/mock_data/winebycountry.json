@@ -1,4 +1,8 @@
-[
+{
+  "Name": "Root",
+  "Cellared": 210,
+  "Children": 
+  [
   {
     "Name": "USA",
     "Cellared": 120,
@@ -6,12 +10,16 @@
       {
         "Name": "California",
         "Cellared": 60,
-        "Children": null
+        "Children": [
+          {"Name": "Napa Valley",
+          "Cellared": 60,
+          "Children": []}
+        ]
       },
       {
         "Name": "Washington",
         "Cellared": 60,
-        "Children": null
+        "Children": []
       }
     ]
   },
@@ -22,12 +30,12 @@
       {
         "Name": "Minsk",
         "Cellared": 60,
-        "Children": null
+        "Children": []
       },
       {
         "Name": "Gomel",
         "Cellared": 20,
-        "Children": null
+        "Children": []
       }
     ]
   },
@@ -38,13 +46,14 @@
       {
         "Name": "Tuzla",
         "Cellared": 5,
-        "Children": null
+        "Children": []
       },
       {
         "Name": "Zvornik",
         "Cellared": 5,
-        "Children": null
+        "Children": []
       }
     ]
   }
 ]
+}
