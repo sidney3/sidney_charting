@@ -18,6 +18,18 @@ export class PieBakery {
     return Math.max(...child_depths, depth)
   }
 
+  static getEntries(root){
+    const len_tracker = []
+    const count_entries = (root, len_tracker) => {
+      len_tracker.push(null)
+      root.Children.forEach((c) => {
+        count_entries(c, len_tracker)
+      })
+    }
+    count_entries(root, len_tracker)
+    return len_tracker.length
+  }
+
   /**
    *
    * Pre-process data for making pie graph. We turn an inputted blank object
@@ -36,10 +48,10 @@ export class PieBakery {
    *
    */
   static PrepPie(params) {
-    const colorScale = d3
+    //TEMP
+    const tempColorScale = d3
       .scaleLinear()
-      .domain([0, 3])
-      .range(["maroon", "tan"])
+      .domain([0, params.TEMP_color_index])
       .range(["maroon", "tan"])
 
     const objPie = d3
@@ -70,7 +82,7 @@ export class PieBakery {
     params.blankTree.temporary = true
     params.blankTree.Visuals = {
       Name: params.inputData.Name,
-      Color: colorScale(params.key.slice(-1)[0]),
+      Color: tempColorScale,
     }
     params.blankTree.root = false
     params.blankTree.data = params.inputData.Children.map((d) => {
@@ -91,6 +103,7 @@ export class PieBakery {
           startAngle: SlicedChildren[index].startAngle,
           endAngle: SlicedChildren[index].endAngle,
         },
+        TEMP_color_index: params.TEMP_color_index
       }
       PieBakery.PrepPie(child_params)
       params.blankTree.Children.push(child_tree)
@@ -122,11 +135,24 @@ export class PieBakery {
    */
   static BakePie(pieTree, initial, svg) {
     const PieID = pieTree.key.join("-")
-
+    let TEMP_index;
+    if(pieTree.key.length === 0){
+      TEMP_index = 1
+    }
+    else if(pieTree.key.length === 1){
+      TEMP_index = 4
+    }
+    else if(pieTree.key.length === 3){
+      TEMP_index = 5
+    }
+    else{
+      TEMP_index = 6
+    }
+    console.log("temp index: ", TEMP_index)
     const colorScale = d3
       .scaleLinear()
       .domain([0, pieTree.data.length])
-      .range(["maroon", "tan"])
+      .range(["crimson", "tan"])
 
     const pieLine = pieTree.PieFunc(pieTree.data)
 
@@ -188,7 +214,7 @@ export class PieBakery {
           
       )
       .attr("id", `pie${PieID}`)
-      .attr("fill", (d, i) => colorScale(i))
+      .attr("fill", (d, i) => pieTree.Visuals.Color((i+1) * TEMP_index))
       //JASON: enter or click?
       .on('mouseenter', function (d,i) {
         const mousedTree = pieTree.Children[i.index]

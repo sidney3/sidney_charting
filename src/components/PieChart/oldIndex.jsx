@@ -1,6 +1,11 @@
 import React, { useRef, useEffect } from "react"
 import * as d3 from "d3"
 import { PieBakery } from "./PieBakery"
+/*
+
+Legacy code to be used as a reference for making Pie Charts
+
+*/
 
 function PieCharts({ width, height, data }) {
   const svgRef = useRef()
