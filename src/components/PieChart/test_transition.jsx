@@ -16,43 +16,71 @@ function Test(){
 
     const svg = d3
     .select(svgRef.current)
-    .selectAll("#Chart-Render")
+    
+    //var groups = svg.selectAll('g').data([1,23,4])
+
+    // exit
+    // groups.exit().remove()
+
+    // // new
+    // var newGroups = groups.enter()
+    // var newgroup = newGroups.append('g')
+    // newgroup.append('text')
+    // newgroup.append('circle')
+
+    // // update + new
+    // groups.select('text')
+    //     .text(function(d){ return d; })
+    //     .attr('x', function(d,i){ return i * 20 + 50; })
+    //     .attr('y', function(d){ return d + 20; })
+    //     .attr('dy', -10)
+    // groups.select('circle')
+    //     .attr('cx', function(d,i){ return i * 20 + 50; })
+    //     .attr('cy', function(d){ return d + 20; })
+    //     .attr('r', 10)
+
+    
+    const toolTipGroup = svg.selectAll(`#toolTip`)
     .data([null])
-    .join("g")
-    .attr("id", "Chart-Render")
-    .attr("transform", "translate(" + width / 2 + "," + height / 2 + ")")
-    
-    let data = [2,2,5]
+    .enter()
+    .append('g')
+    .attr('id', 'toolTip')
 
-    const pie = d3.pie()
-      .startAngle(0)
-      .endAngle(2*Math.PI)
-      .padAngle(0.02)
-      .value((d) => d)
-      .sort(null)
+   
+    toolTipGroup.append('text')
+    toolTipGroup.append('rect')
 
-    const arc = d3.arc().innerRadius(initial_radius).outerRadius(final_radius)
 
-    svg.selectAll('#pie')
-      .data(pie(data))
-      .join('path')
-      .attr('d', arc)
-      .attr('fill', 'grey')
-      .attr('id', 'pie')
-      .attr('opacity', .8)
-    
-    svg.selectAll('#pieText')
-      .data(pie(data))
-      .join('text')
-      .text((d) => d.data)
-      .attr('transform',  function (d) {
-        console.log(d)
-        const x = (d.startAngle + d.endAngle)/2 * (180 / Math.PI)
-        const y = initial_radius + (final_radius - initial_radius)/2
+    toolTipGroup.select('text')
+      .text('Hola yo soy dora')
+      .attr('x', 0)
+      .attr('y', 20)
+    toolTipGroup.select('rect')
+      .attr('x', 60)
+      .attr('y', 60)
+      .attr('height', 30)
+      .attr('width', 50)
+  
+    // const toolTipGroup = svg.selectAll('#toolTip')
+    //   .data([null])
+    //   .join(
+    //     (enter) =>
+    //     enter
+    //      .append('g')
+    //       .append('rect')
+    //       .append('circle'),
+    //     (update) => update.select('g').select('rect')
+    //       .attr('x', 0)
+    //       .attr('y', 0)
+    //       .attr('height', 20)
+    //       .attr('width', 20)
+    //       // .select('circle')
+    //       // .attr('cx', 50)
+    //       // .attr('cy', 60)
+    //       // .attr('radius', 100)
+    //   )
 
-        return `rotate(${x - 90}) translate(${y},0) rotate(${x < 180 ? 0 : 180})`;
-      })
-      .attr('y', "0.32em")
+
 
     // let curr_x = {0:0, 1:0}
     // const renderSquare = (x, i) => {

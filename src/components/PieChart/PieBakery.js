@@ -2,8 +2,6 @@ import * as d3 from "d3"
 import { BrowserText } from "../../utils"
 
 export class PieBakery {
-
-
   /**
    * Get the depth of an inputted (pie) tree
    *
@@ -19,7 +17,7 @@ export class PieBakery {
     return Math.max(...child_depths, depth)
   }
 
-  static getEntries(root){
+  static getEntries(root) {
     const len_tracker = []
     const count_entries = (root, len_tracker) => {
       len_tracker.push(null)
@@ -68,12 +66,16 @@ export class PieBakery {
     params.blankTree.Children = []
     params.blankTree.key = params.key
     params.blankTree.Measurements = {
-      Radius: {
+      radius: {
         init: params.ParentRadius,
-        current: params.ParentRadius,
         target: params.ParentRadius + params.config.radiusChange,
       },
-      Angles: {
+      initialRadius: {
+        init: params.ParentRadius,
+        target: params.ParentRadius + params.config.radiusChange,
+      },
+      currRadius: params.ParentRadius,
+      angles: {
         startAngle: params.Angles.startAngle,
         endAngle: params.Angles.endAngle,
       },
@@ -86,12 +88,11 @@ export class PieBakery {
       Color: tempColorScale,
     }
     params.blankTree.root = false
-    params.blankTree.data = 
-    {
-    child_data: params.inputData.Children.map((d) => {
-      return { Cellared: d.Cellared }
-    }),
-    self_data: {Cellared: params.inputData.Cellared}
+    params.blankTree.data = {
+      child_data: params.inputData.Children.map((d) => {
+        return { Cellared: d.Cellared }
+      }),
+      self_data: { Cellared: params.inputData.Cellared },
     }
     params.blankTree.preview = params.config.preview
 
@@ -109,7 +110,7 @@ export class PieBakery {
           startAngle: SlicedChildren[index].startAngle,
           endAngle: SlicedChildren[index].endAngle,
         },
-        TEMP_color_index: params.TEMP_color_index
+        TEMP_color_index: params.TEMP_color_index,
       }
       PieBakery.PrepPie(child_params)
       params.blankTree.Children.push(child_tree)
@@ -121,8 +122,10 @@ export class PieBakery {
    * @param pieTree - /**
    * {
    * Measurements: {
-   *    Radius {init:number , target: number, current: number}
-   *    Angle: {start: number, end: number}
+   *    currRadius: number
+   *    radius: {init:number , target: number}
+   *    initialRadius: {init:number, target: number}
+   *    angle: {start: number, end: number}
    * }
    * direction: boolean
    * root: boolean
@@ -137,28 +140,24 @@ export class PieBakery {
    * }
    * Preview: {
    * set,
-   * get, 
-   * svg}
+   * get}
    * Key: number
    * PieFunc: f
    * Children: pieTree[]
    * }
-   * 
+   *
    * The function to render a pie from a tree (with a tree representing a pie chart)
    */
-  static BakePie(pieTree, initial, svg, untranslated_svg) {
+  static BakePie(pieTree, initial, svg) {
     const PieID = pieTree.key.join("-")
-    let TEMP_index;
-    if(pieTree.key.length === 0){
+    let TEMP_index
+    if (pieTree.key.length === 0) {
       TEMP_index = 1
-    }
-    else if(pieTree.key.length === 1){
+    } else if (pieTree.key.length === 1) {
       TEMP_index = 4
-    }
-    else if(pieTree.key.length === 3){
+    } else if (pieTree.key.length === 3) {
       TEMP_index = 5
-    }
-    else{
+    } else {
       TEMP_index = 6
     }
     const colorScale = d3
@@ -171,8 +170,8 @@ export class PieBakery {
     const customArc = (r) =>
       d3
         .arc()
-        .innerRadius(pieTree.Measurements.Radius.init)
-        .outerRadius(pieTree.Measurements.Radius.init + r)
+        .innerRadius(pieTree.Measurements.radius.init)
+        .outerRadius(pieTree.Measurements.radius.init + r)
 
     svg
       .selectAll(`#pie${PieID}`)
@@ -187,146 +186,156 @@ export class PieBakery {
               .attr(
                 "d",
                 customArc(
-                  pieTree.Measurements.Radius.target -
-                    pieTree.Measurements.Radius.init
+                  pieTree.Measurements.radius.target -
+                    pieTree.Measurements.radius.init
                 )
               )
           }
-        }
-        ,
+        },
         (update) => {
-          if(!pieTree.root){
             return update
-            .transition()
-            .duration(1000)
-            .tween('expand-graph', function() {
-              let start_radius = pieTree.Measurements.current ?? 0
-              let target_radius
-              if(initial){
-                target_radius = start_radius
-              }
-              else if(pieTree.direction) {
-                target_radius = pieTree.Measurements.Radius.target - pieTree.Measurements.Radius.init
-              }
-              else {
-                target_radius = 0
-              }
-              return function(t){
-                const radius = d3.interpolate(start_radius, target_radius)(t)
-                pieTree.Measurements.current = radius
-                svg
-                  .selectAll(`#pie${PieID}`)
-                  .attr('d', customArc(radius))
-              }
-            })
-          }
-          else{
-            return update
-          }
+              .transition()
+              .duration(1000)
+              .tween("expand-graph", function () {
+                let start_radius = pieTree.currRadius ?? 0
+                let target_radius
+                if (initial) {
+                  target_radius = start_radius
+                } else if (pieTree.direction) {
+                  target_radius =
+                    pieTree.Measurements.radius.target -
+                    pieTree.Measurements.radius.init
+                } else {
+                  target_radius = 0
+                }
+                return function (t) {
+                  const radius = d3.interpolate(start_radius, target_radius)(t)
+                  pieTree.currRadius = radius
+                  svg.selectAll(`#pie${PieID}`).attr("d", customArc(radius))
+                }
+              })
         }
-          
       )
       .attr("id", `pie${PieID}`)
-      .attr("fill", (d, i) => pieTree.Visuals.Color((i+1) * TEMP_index))
-      //JASON: enter or click?
-      .on('mouseenter', function (d,i) {
+      .attr("fill", (d, i) => pieTree.Visuals.Color((i + 1) * TEMP_index))
+      .on("mouseenter", function (d, i) {
         const mousedTree = pieTree.Children[i.index]
-        if(!pieTree.temporary){
-          mousedTree.direction = true
-          PieBakery.BakePie(mousedTree, true, svg, untranslated_svg)
-          PieBakery.BakePie(mousedTree, false, svg, untranslated_svg)
-        }
+        PieBakery.handleMouseEnter(pieTree, mousedTree, svg, d)
       })
-      .on('mouseleave', function (d,i) {
+      .on("mouseleave", function (d, i) {
         const mousedTree = pieTree.Children[i.index]
-        if(mousedTree.temporary){
-          mousedTree.direction = false
-          PieBakery.BakePie(mousedTree, false, svg, untranslated_svg)
-        }
+        PieBakery.handleMouseLeave(pieTree, mousedTree, svg, d)
       })
-      .on('mousemove', function (d,i) {
+      .on("mousemove", function (d, i) {
         const mousedTree = pieTree.Children[i.index]
-
-        const new_obj = {x: d.offsetX, y: d.offsetY, name: mousedTree.Visuals.Name, size: mousedTree.data.self_data.Cellared}
-        // const updatePreview = async () => {
-        //   const new_obj = {x: d.offsetX, y: d.offsetY, name: mousedTree.Visuals.Name, size: mousedTree.data.self_data.Cellared}
-        //   pieTree.preview.set(() => {
-        //     return new_obj
-        //   })
-        //   await new Promise((resolve) => setTimeout(resolve, 0))
-        // }
-        // updatePreview().then(
-        //   () => PieBakery.BakePie(pieTree, false, svg)
-        // )
-        pieTree.preview.set(new_obj)
+        PieBakery.handleMouseMove(pieTree, mousedTree, svg, d)
       })
       //Jason's suggestion: no mouseenter
-      .on('click', function (d,i) {
+      .on("click", function (d, i) {
         const mousedTree = pieTree.Children[i.index]
-        if(mousedTree.temporary){
-          mousedTree.temporary = false
-          mousedTree.direction = true
-          PieBakery.BakePie(mousedTree, false, svg, untranslated_svg)
-        }
-        else {
-          //leads to not the best behavior but I don't think it's worth to fix
-          PieBakery.closeChild(mousedTree)
-          PieBakery.BakePie(mousedTree, false, svg, untranslated_svg)
-        }
+        PieBakery.handleClick(pieTree, mousedTree, svg, d)
       })
-      if(pieTree.direction){
-        svg.selectAll(`#pieText${PieID}`)
+    if (pieTree.direction) {
+      svg
+        .selectAll(`#pieText${PieID}`)
         .data(pieTree.PieFunc(pieTree.data.child_data))
         .join(
-          (enter) => enter.append('text').text((d) => 
-          pieTree.Children[d.index].Visuals.Name
-        ),
-          (update) =>  {
-            if(pieTree.root){
-              return update.attr('opacity', 1)
-
+          (enter) =>
+            enter
+              .append("text")
+              .text((d) => pieTree.Children[d.index].Visuals.Name),
+          (update) => {
+            if (pieTree.root) {
+              return update.attr("opacity", 1)
             }
-            return update.transition().duration(1000).attr('opacity', 1)
+            return update.transition().duration(1000).attr("opacity", 1)
           }
         )
-        
-        .attr('transform',  function (d) {
+
+        .attr("transform", function (d) {
           //TODO: refactor into helper
-          const text_angle = (d.startAngle + d.endAngle)/2 * (180 / Math.PI)
+          //TODO: refactor mouseover into helper, call on mouseover for text
+          const text_angle = ((d.startAngle + d.endAngle) / 2) * (180 / Math.PI)
           const x = text_angle
-          const text_size = BrowserText.getWidth(pieTree.Children[d.index].Visuals.Name, 12)
-          const thickness = (pieTree.Measurements.Radius.target - pieTree.Measurements.Radius.init)/2
-          const text_buffer = Math.max((thickness - text_size/2)/2, 0)
-          const y = pieTree.Measurements.Radius.init + text_size + text_buffer
-          return `rotate(${x - 90}) translate(${y},0) rotate(${x < 180 ? 0 : 180})`;
+          const text_size = BrowserText.getWidth(
+            pieTree.Children[d.index].Visuals.Name,
+            12
+          )
+          const thickness =
+            (pieTree.Measurements.radius.target -
+              pieTree.Measurements.radius.init) /
+            2
+          const text_buffer = Math.max((thickness - text_size / 2) / 2, 0)
+          const y = pieTree.Measurements.radius.init + text_size + text_buffer
+          return `rotate(${
+            x - 90
+          }) translate(${y},0) rotate(${x < 180 ? 0 : 180})`
         })
-        .attr('text-anchor', function(d) {
-          const text_angle = (d.startAngle + d.endAngle)/2 * (180 / Math.PI)
+        .attr("text-anchor", function (d) {
+          const text_angle = ((d.startAngle + d.endAngle) / 2) * (180 / Math.PI)
           return 0 <= text_angle && 180 >= text_angle ? "end" : "start"
         })
         .attr(`id`, `pieText${PieID}`)
-        .style('font-size', 10)
-        .attr('y', "0.32em")
-      }
-      else{
-        svg.selectAll(`#pieText${PieID}`)
-          .transition()
-          .duration(1000)
-          .attr('opacity', 0)
-      }
-
+        .style("font-size", 10)
+        .attr("y", "0.32em")
+    } else {
+      svg
+        .selectAll(`#pieText${PieID}`)
+        .transition()
+        .duration(1000)
+        .attr("opacity", 0)
+    }
 
     pieTree.Children.forEach((childPie) => {
       if (childPie.Children.length > 0) {
-        PieBakery.BakePie(childPie, initial, svg, untranslated_svg)
+        PieBakery.BakePie(childPie, initial, svg)
       }
     })
   }
-  static closeChild(root){
+  static closeChild(root) {
     root.direction = false
     root.temporary = true
     root.Children.forEach((child) => {
       PieBakery.closeChild(child)
     })
+  }
+
+  static handleClick(pieTree, mousedTree, svg, d) {
+    if (mousedTree.temporary) {
+      mousedTree.temporary = false
+      mousedTree.direction = true
+      PieBakery.BakePie(mousedTree, false, svg)
+    } else {
+      //leads to not the best behavior but I don't think it's worth to fix
+      PieBakery.closeChild(mousedTree)
+      PieBakery.BakePie(mousedTree, false, svg)
+    }
+  }
+
+  static handleMouseMove(pieTree, mousedTree, svg, d) {
+    const new_obj = {
+      x: d.offsetX,
+      y: d.offsetY,
+      name: mousedTree.Visuals.Name + ", ",
+      size: mousedTree.data.self_data.Cellared,
+    }
+    pieTree.preview.set(new_obj)
+  }
+
+  static handleMouseLeave(pieTree, mousedTree, svg, d) {
+    if (mousedTree.temporary) {
+      const new_obj = { x: d.offsetX, y: d.offsetY, name: "", size: "" }
+      pieTree.preview.set(new_obj)
+      mousedTree.direction = false
+      PieBakery.BakePie(mousedTree, false, svg)
+    }
+  }
+
+  static handleMouseEnter(pieTree, mousedTree, svg, d) {
+    if (!pieTree.temporary) {
+      mousedTree.direction = true
+      PieBakery.BakePie(mousedTree, true, svg)
+      PieBakery.BakePie(mousedTree, false, svg)
+    }
   }
 }

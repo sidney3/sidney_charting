@@ -11,26 +11,78 @@ function PieChart({ width, height, data }) {
   })
 
   useEffect(() => {
+    
 
     d3.selection.prototype.moveToFront = function() {  
       return this.each(function(){
         this.parentNode.appendChild(this);
       });
     };
-    //console.log("curr preview: ", preview)
+
     const svg = d3.select(svgRef.current)
-    svg.selectAll(`#toolTip`)
-        .data([preview])
-        .join('text')
-        .text((d) => {
-          //console.log("preview seen from pie: ", d)
-          return d.name + ',' + d.size
-        })
-        .attr('id', 'toolTip')
-        .attr('x', (d) => d.x + 10)
-        .attr('y', (d) => d.y)
-        .style('font-size', 10)
-        .moveToFront()
+
+    const toolTipGroup = svg.selectAll(`#toolTips`)
+    .data([preview])
+
+    toolTipGroup.exit().remove();
+
+    const newToolTipGroup = toolTipGroup.enter()
+      .append('g')
+      .attr('id', 'toolTips')
+      .attr('class', 'group')
+
+    newToolTipGroup.append('rect')
+      .attr('height', 20)
+      .attr('width', 20)
+      .attr('fill', 'silver')
+      .attr('stroke', 'black')
+
+    newToolTipGroup.append('text')
+      .style('font-size', 10)
+
+    // toolTipGroup.select('rect')
+    //   .attr('x',(d) => d.x)
+    //   .attr('y', (d) => d.y)
+
+
+    toolTipGroup.select('text')
+      .text((d) => {
+        //console.log("preview seen from pie: ", d)
+        return d.name + d.size
+      })
+      .attr('x', (d) => d.x + 10)
+      .attr('y', (d) => d.y)
+      .raise()
+
+    toolTipGroup.raise()
+    //console.log("curr preview: ", preview)
+
+    // svg.selectAll(`#toolTipBox`)
+    //   .data([preview])
+    //   .join('rect')
+    //   .attr('height', 40)
+    //   .attr('width', 90)
+    //   .attr('fill', 'silver')
+    //   .attr('stroke', 'black')
+    //   .attr('stroke-width', 12)
+    //   .attr('id', 'toolTipBox')
+    //   .attr('x', (d) => d.x)
+    //   .attr('y', (d) => d.y)
+    //   .moveToFront()
+
+
+    // svg.selectAll(`#toolTipText`)
+    //     .data([preview])
+    //     .join('text')
+    //     .text((d) => {
+    //       //console.log("preview seen from pie: ", d)
+    //       return d.name + ',' + d.size
+    //     })
+    //     .attr('id', 'toolTipText')
+    //     .attr('x', (d) => d.x + 10)
+    //     .attr('y', (d) => d.y)
+    //     .style('font-size', 10)
+    //     .moveToFront()
 
     //https://stackoverflow.com/questions/14167863/how-can-i-bring-a-circle-to-the-front-with-d3
     //console.log("updated preview: ", preview)
