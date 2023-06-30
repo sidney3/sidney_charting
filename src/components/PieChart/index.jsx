@@ -31,12 +31,6 @@ function PieChart({ width, height, data }) {
       .attr('id', 'toolTips')
       .attr('class', 'group')
 
-    newToolTipGroup.append('rect')
-      .attr('height', 20)
-      .attr('width', 20)
-      .attr('fill', 'silver')
-      .attr('stroke', 'black')
-
     newToolTipGroup.append('text')
       .style('font-size', 10)
 
@@ -108,7 +102,9 @@ function PieChart({ width, height, data }) {
       key: [],
       ParentRadius: 50,
       Angles: {startAngle: 0, endAngle: 2*Math.PI},
-      TEMP_color_index: max_entries
+      TEMP_color_index: max_entries,
+      root: pieTree,
+      depth: 0
     }
 
 
