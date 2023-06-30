@@ -1,4 +1,5 @@
 import * as d3 from "d3"
+import { BrowserText } from "../../utils"
 
 export class PieBakery {
 
@@ -88,6 +89,7 @@ export class PieBakery {
     params.blankTree.data = params.inputData.Children.map((d) => {
       return { Cellared: d.Cellared }
     })
+    params.blankTree.preview = params.config.preview
 
     const SlicedChildren = objPie(params.inputData.Children)
     params.inputData.Children.forEach((child, index) => {
@@ -148,7 +150,6 @@ export class PieBakery {
     else{
       TEMP_index = 6
     }
-    console.log("temp index: ", TEMP_index)
     const colorScale = d3
       .scaleLinear()
       .domain([0, pieTree.data.length])
@@ -185,7 +186,7 @@ export class PieBakery {
           if(!pieTree.root){
             return update
             .transition()
-            .duration(500)
+            .duration(1000)
             .tween('expand-graph', function() {
               let start_radius = pieTree.Measurements.current ?? 0
               let target_radius
@@ -231,10 +232,22 @@ export class PieBakery {
           PieBakery.BakePie(mousedTree, false, svg)
         }
       })
+      // .on('mousemove', function (d,i) {
+      //   const updatePreview = async () => {
+      //     const new_obj = {x: d.offsetX, y: d.offsetY, text: pieTree.data[i.index].Cellared}
+      //     pieTree.preview.set(() => {
+      //       return new_obj
+      //     })
+      //     await new Promise((resolve) => setTimeout(resolve, 0))
+      //   }
+      //   updatePreview()
+      // })
       .on('click', function (d,i) {
         const mousedTree = pieTree.Children[i.index]
         if(mousedTree.temporary){
           mousedTree.temporary = false
+          mousedTree.direction = true
+          PieBakery.BakePie(mousedTree, false, svg)
         }
         else {
           //leads to not the best behavior but I don't think it's worth to fix
@@ -242,8 +255,50 @@ export class PieBakery {
           PieBakery.BakePie(mousedTree, false, svg)
         }
       })
-      //todo: onclick - set pieTree.Children[i.index] to not temporary (or reverse)
-      //and bake pie
+      if(pieTree.direction){
+        svg.selectAll(`#pieText${PieID}`)
+        .data(pieTree.PieFunc(pieTree.data))
+        .join(
+          (enter) => enter.append('text').text((d) => 
+          pieTree.Children[d.index].Visuals.Name
+        ),
+          (update) =>  {
+            if(pieTree.root){
+              return update.attr('opacity', 1)
+
+            }
+            return update.transition().duration(1000).attr('opacity', 1)
+          }
+        )
+        
+        .attr('transform',  function (d) {
+          const text_angle = (d.startAngle + d.endAngle)/2 * (180 / Math.PI)
+          const x = text_angle
+          const text_size = BrowserText.getWidth(pieTree.Children[d.index].Visuals.Name, 12)
+          const thickness = (pieTree.Measurements.Radius.target - pieTree.Measurements.Radius.init)/2
+          console.log("thickness: ", thickness)
+          const text_buffer = Math.max((thickness - text_size/2)/2, 0)
+          console.log("buffer: ", text_buffer, "text_size: ", text_size, "text: ", pieTree.Children[d.index].Visuals.Name)
+          const y = pieTree.Measurements.Radius.init + text_size + text_buffer
+          return `rotate(${x - 90}) translate(${y},0) rotate(${x < 180 ? 0 : 180})`;
+        })
+        .attr('text-anchor', function(d) {
+          const text_angle = (d.startAngle + d.endAngle)/2 * (180 / Math.PI)
+          return 0 <= text_angle && 180 >= text_angle ? "end" : "start"
+        })
+        .attr(`id`, `pieText${PieID}`)
+        .style('font-size', 10)
+        .attr('y', "0.32em")
+      }
+      else{
+        svg.selectAll(`#pieText${PieID}`)
+          .transition()
+          .duration(1000)
+          .attr('opacity', 0)
+      }
+     
+
+
 
     pieTree.Children.forEach((childPie) => {
       if (childPie.Children.length > 0) {

@@ -5,21 +5,24 @@ import Test from "../PieChart/test_transition"
 import { default_key_to_color } from "../../utils"
 import PieChart from "../PieChart/oldIndex"
 import PieCharts from "../PieChart"
+import BarChart from "../BarChart"
 import "./index.css"
 
-const BottlesSOTdata = require("./mock_data/bottlesovertime.json").map((d) => [
-  Math.max(0, d.Date),
-  Math.max(0, d.Cellared),
-])
+const CellaredSOTdata = require("./mock_data/bottlesovertime.json").map(
+  (d) => [Math.max(0, d.Date), Math.max(0, d.Cellared)]
+)
 const PriceSOTdata = require("./mock_data/priceovertime.json").map((d) => [
   Math.max(0, d.Date),
   Math.max(0, d.Price),
 ])
 
-const largeBottlesOTdata = require("./mock_data/largebottlesovertime.json").map(
-  (d) => [Math.max(0, d.Date), Math.max(0, d.Cellared)]
-)
+const largeCellaredOTdata =
+  require("./mock_data/largebottlesovertime.json").map((d) => [
+    Math.max(0, d.Date),
+    Math.max(0, d.Cellared),
+  ])
 
+const wineByYear = require("./mock_data/winebyyear.json")
 const wineByCountry = require("./mock_data/winebycountry.json")
 
 function RenderDataPreview({ dataPreview, dataArr }) {
@@ -46,8 +49,8 @@ function CTCharts() {
       key: 1,
     },
     {
-      data: BottlesSOTdata,
-      name: "Bottles over Time",
+      data: CellaredSOTdata,
+      name: "Cellared over Time",
       key: 0,
     },
   ])
@@ -67,7 +70,7 @@ function CTCharts() {
 
   return (
     <div>
-    {/* <div>
+      <div>
       <RenderDataPreview dataPreview={dataPreview} dataArr={dataArr} />
       <SizeOverTime
         h={600}
@@ -80,8 +83,8 @@ function CTCharts() {
         onClick={() => {
           setDataArr([
             {
-              data: largeBottlesOTdata,
-              name: "Large Bottles over time data",
+              data: largeCellaredOTdata,
+              name: "Large Cellared over time data",
               key: 1,
             },
           ])
@@ -89,9 +92,11 @@ function CTCharts() {
       >
         Change Dataset
       </button>
-    </div> */}
+    </div>
+      {/* <Test /> */}
+      {/* <BarChart height={500} width={500} data={wineByYear} /> */}
       <PieCharts height={500} width={500} data={wineByCountry} />
-      <PieChart height={500} width={500} data={wineByCountry} />
+      {/* <PieChart height={500} width={500} data={wineByCountry} /> */}
     </div>
   )
 }

@@ -8,14 +8,12 @@ import {
 import { unix_to_MDY, ticks } from "../../utils"
 import * as d3 from "d3"
 
-
-
 export class PathManager {
   //params: {x_formula, pagePos, data}
   /*
   //from a given [x,y], get the current state
   // (i.e. if we are at time 8 and working with the following data:
-  // (where x is time, y is bottles)
+  // (where x is time, y is Cellared)
   //[[3,5], [11,12]]
   */
 
@@ -32,15 +30,15 @@ export class PathManager {
   // bounds
   //}
 
-  static pre_process_datums(datums, secs, height, width){
+  static pre_process_datums(datums, secs, height, width) {
     const time_threshold = Date.now() - secs
 
-    if(datums.length === 0){
+    if (datums.length === 0) {
       return {
         x_min: 0,
         x_max: 100,
         y_min: 0,
-        y_max: 100
+        y_max: 100,
       }
     }
 
@@ -55,35 +53,39 @@ export class PathManager {
     let filtered_datums = []
 
     datums.forEach((datum, index) => {
-
-      const filtered_datum = datum.data.filter((data_point) => data_point[0] > time_threshold)
-      filtered_datum.sort((a,b) => a[0] - b[0])
+      const filtered_datum = datum.data.filter(
+        (data_point) => data_point[0] > time_threshold
+      )
+      filtered_datum.sort((a, b) => a[0] - b[0])
       //add a today entry
       //breaks some of the example code that works into the future. This isn't an issue for
       //real data
-      if(filtered_datum.slice(-1)[0][0] < Date.now()){
+      if (filtered_datum.slice(-1)[0][0] < Date.now()) {
         filtered_datum.push([Date.now(), filtered_datum.slice(-1)[0][1]])
       }
       filtered_datums.push(filtered_datum)
       filtered_datum.forEach((entry) => {
-          if(curr_bounds['x_min'] > entry[0]){
-            curr_bounds['x_min'] = entry[0]
-          }
-          if(curr_bounds['x_max'] < entry[0]){
-            curr_bounds['x_max'] = entry[0]
-            max_time_index = index
-          }
-          if(curr_bounds['y_min'] > entry[1]){
-            curr_bounds['y_min'] = entry[1]
-          }
-          if(curr_bounds['y_max'] < entry[1]){
-            curr_bounds['y_max'] = entry[1]
-          }
+        if (curr_bounds["x_min"] > entry[0]) {
+          curr_bounds["x_min"] = entry[0]
+        }
+        if (curr_bounds["x_max"] < entry[0]) {
+          curr_bounds["x_max"] = entry[0]
+          max_time_index = index
+        }
+        if (curr_bounds["y_min"] > entry[1]) {
+          curr_bounds["y_min"] = entry[1]
+        }
+        if (curr_bounds["y_max"] < entry[1]) {
+          curr_bounds["y_max"] = entry[1]
+        }
       })
     })
 
     filtered_datums.forEach((datum, index) => {
-      if(index !== max_time_index && datum.slice(-1)[0][0] < curr_bounds.x_max){
+      if (
+        index !== max_time_index &&
+        datum.slice(-1)[0][0] < curr_bounds.x_max
+      ) {
         filtered_datums[index].push([curr_bounds.x_max, datum.slice(-1)[0][1]])
       }
     })
@@ -98,12 +100,11 @@ export class PathManager {
       .domain([curr_bounds.y_min, curr_bounds.y_max])
       .range([height - DEFAULT_OFFSETS.y, DEFAULT_OFFSETS.y])
 
-
     return {
       bounds: curr_bounds,
       formulae: {
         x_formula: x_formula,
-        y_formula: y_formula
+        y_formula: y_formula,
       },
       filtered_data: filtered_datums,
     }
@@ -116,14 +117,14 @@ export class PathManager {
     while (params.data[i][0] > time && i > 0) {
       i -= 1
     }
-    
+
     return {
       date: unix_to_MDY(time),
       datum: params.data[i][1],
     }
   }
   //params: height, width, bounds
-  static get_formulae(params){
+  static get_formulae(params) {
     const x_formula = d3
       .scaleLinear()
       .domain([params.bounds.x_min, params.bounds.x_max])
@@ -136,18 +137,17 @@ export class PathManager {
 
     return {
       x_formula: x_formula,
-      y_formula: y_formula
+      y_formula: y_formula,
     }
   }
 
-  
   //params: {height, width, formulae, data}
   static transform_dataset(params) {
     return d3
-        .line()
-        .x((d) => params.formulae.x_formula(d[0]))
-        .y((d) => params.formulae.y_formula(d[1]))
-        .curve(d3.curveBasis)(params.data)
+      .line()
+      .x((d) => params.formulae.x_formula(d[0]))
+      .y((d) => params.formulae.y_formula(d[1]))
+      .curve(d3.curveBasis)(params.data)
   }
 
   /*generate the horizontal dashes for the graph */
