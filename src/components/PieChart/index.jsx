@@ -6,50 +6,42 @@ import { PieBakery } from "./PieBakery"
 function PieChart({ width, height, data }) {
   const svgRef = useRef()
 
-  // const [preview, setPreview] = useState({
-  //   text: "hola", x: 0, y:0
-  // })
+  const [preview, setPreview] = useState({
+    name: "", x: 0, y:0, size: ""
+  })
 
-  // useEffect(() => {
-  //   //console.log("curr preview: ", preview)
+  useEffect(() => {
 
-  //   //https://stackoverflow.com/questions/14167863/how-can-i-bring-a-circle-to-the-front-with-d3
-  //   d3.selection.prototype.moveToFront = function() {
-  //     return this.each(function(){
-  //       this.parentNode.appendChild(this);
-  //     });
-  //   };
+    d3.selection.prototype.moveToFront = function() {  
+      return this.each(function(){
+        this.parentNode.appendChild(this);
+      });
+    };
+    //console.log("curr preview: ", preview)
+    const svg = d3.select(svgRef.current)
+    svg.selectAll(`#toolTip`)
+        .data([preview])
+        .join('text')
+        .text((d) => {
+          //console.log("preview seen from pie: ", d)
+          return d.name + ',' + d.size
+        })
+        .attr('id', 'toolTip')
+        .attr('x', (d) => d.x + 10)
+        .attr('y', (d) => d.y)
+        .style('font-size', 10)
+        .moveToFront()
 
-  //   const svg = d3
-  //   .select(svgRef.current)
-    
-  //   svg.selectAll(`#previewText`)
-  //     .data([preview])
-  //     .join('text')
-  //     .attr('x', (d) => d.x)
-  //     .attr('y', (d) => d.y)
-  //     .attr('id', 'previewText')
-  //     .text((d) => {
-  //       const sel = d3.select(this)
-  //       sel.raise()
-  //       return d.text}
-  //       )
+    //https://stackoverflow.com/questions/14167863/how-can-i-bring-a-circle-to-the-front-with-d3
+    //console.log("updated preview: ", preview)
 
-
-  // }, [preview])
+  }, [preview])
 
   useEffect(() => {
     console.log("data", data)
     const depth = PieBakery.getDepth(data, 1)
 
-    const factorize = (num) => {
-      if(num === 1){
-        return 1
-      }
-      return num * factorize(num - 1)
-    }
     const max_entries = 15
-    console.log(max_entries)
     
     
 
@@ -59,7 +51,7 @@ function PieChart({ width, height, data }) {
       inputData: data,
       blankTree: pieTree,
       config: {radiusChange: 50, Depth: depth,
-        // preview: {set: setPreview, get: preview}
+        preview: {set: setPreview, get: preview}
         },
       key: [],
       ParentRadius: 50,
@@ -76,6 +68,7 @@ function PieChart({ width, height, data }) {
 
     console.log("final tree: ", pieTree)
 
+    const untranslated_svg = d3.select(svgRef.current)
     const svg = d3
       .select(svgRef.current)
       .selectAll("#Chart-Render")
@@ -84,7 +77,8 @@ function PieChart({ width, height, data }) {
       .attr("id", "Chart-Render")
       .attr("transform", "translate(" + width / 2 + "," + height / 2 + ")")
     
-    PieBakery.BakePie(pieTree, false, svg)
+    console.log('svg from index: ', svg)
+    PieBakery.BakePie(pieTree, false, svg, untranslated_svg)
 
   }, [])
 
