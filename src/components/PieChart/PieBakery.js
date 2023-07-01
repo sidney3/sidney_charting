@@ -1,6 +1,7 @@
 import * as d3 from "d3"
 import { BrowserText } from "../../utils"
 import { isElementAccessExpression } from "typescript"
+import { PieUtil } from "./PieUtil"
 
 export class PieBakery {
   /**
@@ -38,17 +39,18 @@ export class PieBakery {
    * @param childArgs:
    * {
    *  inputData: {Name, Cellared, Children: inputData[]}[]
-   *  blankTree: pieTree[] (described in bakePie). Inputted blank
+   *  blankTree: pieTree (described in bakePie). Inputted blank
    * and filled in over the prep of the pie
    *  config: {radiusChange, Depth}
-   *  key: number[]
+   *  key: number[],
+   *  Nodes: pieTree[]
    *  Angles: {startAngle, endAngle}
    *  ParentRadius: number
    * }
    *
    */
   static PrepPie(params) {
-    //TEMP
+    params.nodes.push(params.blankTree)
     const tempColorScale = d3
       .scaleLinear()
       .domain([0, params.TEMP_color_index])
@@ -97,6 +99,7 @@ export class PieBakery {
       self_data: { Cellared: params.inputData.Cellared },
     }
     params.blankTree.preview = params.config.preview
+    params.blankTree.nodes = params.nodes
 
     const SlicedChildren = objPie(params.inputData.Children)
     params.inputData.Children.forEach((child, index) => {
@@ -114,46 +117,19 @@ export class PieBakery {
         },
         TEMP_color_index: params.TEMP_color_index,
         depth: params.depth + 1,
-        root: params.root
+        root: params.root,
+        nodes: params.nodes
       }
       PieBakery.PrepPie(child_params)
       params.blankTree.Children.push(child_tree)
     })
   }
-
-  /**
-   *
-   * @param pieTree - /**
-   * {
-   * Measurements: {
-   *    currRadius: number
-   *    radius: {init:number , target: number}
-   *    initialRadius: {init:number, target: number}
-   *    angle: {start: number, end: number}
-   * }
-   * direction: boolean
-   * root: boolean
-   * Temporary / Full component: boolean
-   * Visuals {
-   *    Name: string
-   *    Color: number
-   *  }
-   * data: {
-   * child_data: {cellared: number}[]
-   * self_data: {cellared:number}
-   * },
-   * Root
-   * Preview: {
-   * set,
-   * get}
-   * Key: number
-   * PieFunc: f
-   * Children: pieTree[]
-   * }
-   *
-   * The function to render a pie from a tree (with a tree representing a pie chart)
-   */
-  static BakePie(pieTree, initial, svg) {
+  static BakePieIterative(direction, initial, index, nodes, svg) {
+    //TODO: current issue
+    //the on end is not traversing through
+    //perhaps manual check for if it doesn't get triggered?
+    console.log("index: ", index)
+    const pieTree = nodes[index]
     const PieID = pieTree.key.join("-")
     let TEMP_index
     if (pieTree.key.length === 0) {
@@ -183,52 +159,73 @@ export class PieBakery {
       .data(pieLine)
       .join(
         (enter) => {
+            console.log("entering")
             return enter.append("path")
+
         },
         (update) => {
-            return update
+          console.log("updating")
+          let start_radius = pieTree.Measurements.currRadius ?? 0
+          let target_radius
+          if (initial) {
+            target_radius = start_radius
+          } else if (pieTree.direction) {
+            target_radius =
+              pieTree.Measurements.radius.target -
+              pieTree.Measurements.radius.init
+          } else {
+            target_radius = 0
+          }
+          let animation_duration = 200
+          if(start_radius === target_radius){
+            animation_duration = 100
+          }
+          return update
               .transition()
-              .duration(1000)
+              .duration(animation_duration)
               .tween("expand-graph", function () {
-                let start_radius = pieTree.Measurements.currRadius ?? 0
-                let target_radius
-                if (initial) {
-                  target_radius = start_radius
-                } else if (pieTree.direction) {
-                  target_radius =
-                    pieTree.Measurements.radius.target -
-                    pieTree.Measurements.radius.init
-                } else {
-                  target_radius = 0
-                }
-                console.log("target radius: ", target_radius, "start radius: ", start_radius, "name: ", pieTree.Visuals.Name, "direction: ", pieTree.direction)
+                "entering animation"
                 return function (t) {
+                  console.log("a")
                   const radius = d3.interpolate(start_radius, target_radius)(t)
-                  console.log("Name: ", pieTree.Visuals.Name, "radius: ", radius)
                   pieTree.Measurements.currRadius = radius
                   svg.selectAll(`#pie${PieID}`).attr("d", customArc(radius))
+                }
+              })
+              //render the next node in nodes
+              .on('end', () => {
+                console.log("transition ended")
+                if(!direction){
+                  if(index > 0){
+                    PieBakery.BakePieIterative(direction, initial, index - 1, nodes, svg)
+                  }
+                }
+                else{
+                  if(index < nodes.length - 1){
+                    PieBakery.BakePieIterative(direction, initial, index + 1, nodes, svg)
+                  }
                 }
               })
         }
       )
       .attr("id", `pie${PieID}`)
       .attr("fill", (d, i) => pieTree.Visuals.Color((i + 1) * TEMP_index))
-      .on("mouseenter", function (d, i) {
-        const mousedTree = pieTree.Children[i.index]
-        PieBakery.handleMouseEnter(pieTree, mousedTree, svg, d)
-      })
-      .on("mouseleave", function (d, i) {
-        const mousedTree = pieTree.Children[i.index]
-        PieBakery.handleMouseLeave(pieTree, mousedTree, svg, d)
-      })
+      // .on("mouseenter", function (d, i) {
+      //   const mousedTree = pieTree.Children[i.index]
+      //   PieBakery.handleMouseEnter(pieTree, mousedTree, svg, d)
+      // })
+      // .on("mouseleave", function (d, i) {
+      //   const mousedTree = pieTree.Children[i.index]
+      //   PieBakery.handleMouseLeave(pieTree, mousedTree, svg, d)
+      // })
       .on("mousemove", function (d, i) {
         const mousedTree = pieTree.Children[i.index]
-        PieBakery.handleMouseMove(pieTree, mousedTree, svg, d)
+        PieUtil.handleMouseMove(pieTree, mousedTree, svg, d)
       })
       //Jason's suggestion: no mouseenter
       .on("click", function (d, i) {
         const mousedTree = pieTree.Children[i.index]
-        PieBakery.handleClick(pieTree, mousedTree, svg, d)
+        PieUtil.handleClick(pieTree, mousedTree, svg, d)
       })
     if (pieTree.direction) {
       svg
@@ -293,118 +290,309 @@ export class PieBakery {
         .transition()
         .duration(1000)
         .attr("opacity", 0)
-    }
+  }
 
-    pieTree.Children.forEach((childPie) => {
-      if (childPie.Children.length > 0) {
-        PieBakery.BakePie(childPie, initial, svg)
+    if(pieTree.data.child_data.length === 0){
+      if(!direction){
+        if(index > 0){
+          PieBakery.BakePieIterative(direction, initial, index - 1, nodes, svg)
+        }
       }
-    })
-  }
-  static closeChild(root) {
-    root.direction = false
-    root.temporary = true
-    root.Children.forEach((child) => {
-      PieBakery.closeChild(child)
-    })
-  }
-
-  static handleClick(pieTree, mousedTree, svg, d) {
-    if (mousedTree.temporary) {
-      console.log("root: ", pieTree.root_node)
-      // PieBakery.ShrinkToDepthN(pieTree.root_node, mousedTree.depth + 1, 0, {
-      //   currRadius: pieTree.root_node.Measurements.radius.init,
-      //   radiusChange: 5
-      // })
-      pieTree.root_node.Children.forEach((child) => {
-        PieBakery.ShrinkToDepthN(child, mousedTree.depth, 0, {
-          currRadius: child.Measurements.radius.init,
-          radiusChange: 10
-        })
-      })
-      console.log("root after changes: ", pieTree.root_node)
-      mousedTree.temporary = false
-      mousedTree.direction = true
-      PieBakery.BakePie(pieTree.root_node, false, svg)
-    } else {
-      PieBakery.closeChild(mousedTree)
-      PieBakery.BakePie(mousedTree, false, svg)
+      else{
+        if(index < nodes.length - 1){
+          PieBakery.BakePieIterative(direction, initial, index + 1, nodes, svg)
+        }
+      }
     }
   }
 
-  static handleMouseMove(pieTree, mousedTree, svg, d) {
-    const new_obj = {
-      x: d.offsetX,
-      y: d.offsetY,
-      name: mousedTree.Visuals.Name + ", ",
-      size: mousedTree.data.self_data.Cellared,
-    }
-    pieTree.preview.set(new_obj)
-  }
-
-  static handleMouseLeave(pieTree, mousedTree, svg, d) {
-    if (mousedTree.temporary) {
-      const new_obj = { x: d.offsetX, y: d.offsetY, name: "", size: "" }
-      pieTree.preview.set(new_obj)
-      mousedTree.direction = false
-      PieBakery.BakePie(mousedTree, false, svg)
-    }
-  }
-
-  static handleMouseEnter(pieTree, mousedTree, svg, d) {
-    if (!pieTree.temporary) {
-      mousedTree.direction = true
-      PieBakery.BakePie(mousedTree, true, svg)
-      PieBakery.BakePie(mousedTree, false, svg)
-    }
-  }
-  
   /**
-   * A method that undoes ShrinkToDepthN. We store in each pie element the "old"
-   * radius, and so this method just sets the radius to such old measurements
-   * @param {*} root 
-   */
-  static ResetRadius(root){
-    root.Measurements.radius = root.Measurements.initialRadius
-
-    root.forEach((child) => {
-      PieBakery.ResetRadius(child)
-    })
-  }
-  /**
-   * 
-   * The "focus" method - beginning at the root we shrink all shelves
-   * up to a target depth N. This is activated when a slice of the chart
-   * is clicked (to focus)
-   * 
-   * @param {*} root pieTree root
-   * @param {*} depth desired depth to continue to
-   * @param {*} shrinkParams: {
-      currRadius,
-      radiusChange
+   *
+   * @param pieTree - /**
+   * {
+   * Measurements: {
+   *    currRadius: number
+   *    radius: {init:number , target: number}
+   *    initialRadius: {init:number, target: number}
+   *    angle: {start: number, end: number}
    * }
+   * direction: boolean
+   * root: boolean
+   * Temporary / Full component: boolean
+   * Visuals {
+   *    Name: string
+   *    Color: number
+   *  }
+   * data: {
+   * child_data: {cellared: number}[]
+   * self_data: {cellared:number}
+   * },
+   * Root
+   * Preview: {
+   * set,
+   * get}
+   * Key: number
+   * PieFunc: f
+   * Children: pieTree[]
+   * }
+   *
+   * The function to render a pie from a tree (with a tree representing a pie chart)
    */
-  static ShrinkToDepthN(root, target_depth, curr_depth, shrinkParams) {
-    if(curr_depth < target_depth){
-      root.Measurements.radius = {
-        init: shrinkParams.currRadius,
-        target: shrinkParams.currRadius + shrinkParams.radiusChange
-      }
-      const newShrinkParams = {
-        currRadius:  shrinkParams.currRadius + shrinkParams.radiusChange,
-        radiusChange: shrinkParams.radiusChange
-      }
-      console.log(root.Visuals.Name, root.depth, "shrink params passed: ", shrinkParams, "shrink params sent: ", newShrinkParams)
-      root.Children.forEach((child) => {
-        PieBakery.ShrinkToDepthN(child, target_depth, curr_depth + 1, newShrinkParams)
+  static BakePie(pieTree, initial, svg, top_down) {
+    const PieID = pieTree.key.join("-")
+    let TEMP_index
+    if (pieTree.key.length === 0) {
+      TEMP_index = 1
+    } else if (pieTree.key.length === 1) {
+      TEMP_index = 4
+    } else if (pieTree.key.length === 3) {
+      TEMP_index = 5
+    } else {
+      TEMP_index = 6
+    }
+    const colorScale = d3
+      .scaleLinear()
+      .domain([0, pieTree.data.child_data.length])
+      .range(["crimson", "tan"])
+
+    const pieLine = pieTree.PieFunc(pieTree.data.child_data)
+
+    const customArc = (r) =>
+      d3
+        .arc()
+        .innerRadius(pieTree.Measurements.radius.init)
+        .outerRadius(pieTree.Measurements.radius.init + r)
+
+    svg
+      .selectAll(`#pie${PieID}`)
+      .data(pieLine)
+      .join(
+        (enter) => {
+            return enter.append("path")
+        },
+        (update) => {
+          let start_radius = pieTree.Measurements.currRadius ?? 0
+          let target_radius
+          if (initial) {
+            target_radius = start_radius
+          } else if (pieTree.direction) {
+            target_radius =
+              pieTree.Measurements.radius.target -
+              pieTree.Measurements.radius.init
+          } else {
+            target_radius = 0
+          }
+          let animation_duration = 1000
+          if(start_radius === target_radius){
+            animation_duration = 1
+          }
+          return update
+              .transition()
+              .duration(animation_duration)
+              .tween("expand-graph", function () {
+                return function (t) {
+                  const radius = d3.interpolate(start_radius, target_radius)(t)
+                  pieTree.Measurements.currRadius = radius
+                  svg.selectAll(`#pie${PieID}`).attr("d", customArc(radius))
+                }
+              })
+              .on('end', () => {
+                pieTree.Children.forEach((childPie) => {
+                  if (childPie.Children.length > 0) {
+                    PieBakery.BakePie(childPie, initial, svg, true)
+                  }
+                })
+              })
+        }
+      )
+      .attr("id", `pie${PieID}`)
+      .attr("fill", (d, i) => pieTree.Visuals.Color((i + 1) * TEMP_index))
+      // .on("mouseenter", function (d, i) {
+      //   const mousedTree = pieTree.Children[i.index]
+      //   PieBakery.handleMouseEnter(pieTree, mousedTree, svg, d)
+      // })
+      // .on("mouseleave", function (d, i) {
+      //   const mousedTree = pieTree.Children[i.index]
+      //   PieBakery.handleMouseLeave(pieTree, mousedTree, svg, d)
+      // })
+      .on("mousemove", function (d, i) {
+        const mousedTree = pieTree.Children[i.index]
+        PieUtil.handleMouseMove(pieTree, mousedTree, svg, d)
       })
-    }
-    else if(curr_depth === target_depth){
-      root.Measurements.radius.init = shrinkParams.currRadius
-      //no need to alter the target
-    }
-    else{
-      throw Error("Should not be shrinking past current depth")
-    }
+      //Jason's suggestion: no mouseenter
+      .on("click", function (d, i) {
+        const mousedTree = pieTree.Children[i.index]
+        PieUtil.handleClick(pieTree, mousedTree, svg, d)
+      })
+    if (pieTree.direction) {
+      svg
+        .selectAll(`#pieText${PieID}`)
+        .data(pieTree.PieFunc(pieTree.data.child_data))
+        .join(
+          (enter) =>
+            enter
+              .append("text")
+              .text((d) => pieTree.Children[d.index].Visuals.Name),
+          (update) => {
+            if (pieTree.is_root) {
+              return update.attr("opacity", 1)
+            }
+            return update.transition().duration(1000).attr("opacity", 1)
+          }
+        )
+
+        .attr("transform", function (d) {
+          //TODO: refactor into helper
+          //TODO: refactor mouseover into helper, call on mouseover for text
+          const text_angle = ((d.startAngle + d.endAngle) / 2) * (180 / Math.PI)
+          const x = text_angle
+          const text_size = BrowserText.getWidth(
+            pieTree.Children[d.index].Visuals.Name,
+            12
+          )
+          const thickness =
+            (pieTree.Measurements.radius.target -
+              pieTree.Measurements.radius.init) /
+            2
+          const text_buffer = Math.max((thickness - text_size / 2) / 2, 0)
+          const y = pieTree.Measurements.radius.init + text_size + text_buffer
+          return `rotate(${
+            x - 90
+          }) translate(${y},0) rotate(${x < 180 ? 0 : 180})`
+        })
+        .attr("text-anchor", function (d) {
+          const text_angle = ((d.startAngle + d.endAngle) / 2) * (180 / Math.PI)
+          return 0 <= text_angle && 180 >= text_angle ? "end" : "start"
+        })
+        .attr(`id`, `pieText${PieID}`)
+        .style("font-size", 10)
+        .attr("y", "0.32em")
+        // .on('mouseover', (d) => {
+        //   const mousedIndex = d.fromElement.__data__.index
+        //   const mousedTree = pieTree.Children[mousedIndex]
+        //   if(mousedTree){
+        //     PieBakery.handleMouseMove(pieTree, mousedTree, svg, d)
+        //   }
+        // })
+        // .on('mouseenter', (d) => {
+        //   const mousedIndex = d.fromElement.__data__.index
+        //   const mousedTree = pieTree.Children[mousedIndex]
+        //   if(mousedTree){
+        //     PieBakery.handleMouseEnter(pieTree, mousedTree, svg, d)
+        //   }
+        // })
+    } else {
+      svg
+        .selectAll(`#pieText${PieID}`)
+        .transition()
+        .duration(1000)
+        .attr("opacity", 0)
+  }
+
+    // pieTree.Children.forEach((childPie) => {
+    //   if (childPie.Children.length > 0) {
+    //     PieBakery.BakePie(childPie, initial, svg)
+    //   }
+    // })
   }
 }
+//   static closeChild(root) {
+//     root.direction = false
+//     root.temporary = true
+//     root.Children.forEach((child) => {
+//       PieBakery.closeChild(child)
+//     })
+//   }
+
+//   static handleClick(pieTree, mousedTree, svg, d) {
+//     if (mousedTree.temporary) {
+//       PieBakery.ShrinkToDepthN(pieTree.root_node, mousedTree.depth, 0, {
+//         currRadius: pieTree.root_node.Measurements.radius.init,
+//         radiusChange: 30
+//       })
+//       mousedTree.temporary = false
+//       mousedTree.direction = true
+//       PieBakery.BakePie(pieTree.root_node, false, svg, true)
+//     } else {
+//       PieBakery.ResetRadius(pieTree.root_node)
+//       PieBakery.closeChild(mousedTree)
+//       PieBakery.BakePie(pieTree.root_node, false, svg, true)
+//     }
+//   }
+
+//   static handleMouseMove(pieTree, mousedTree, svg, d) {
+//     const new_obj = {
+//       x: d.offsetX,
+//       y: d.offsetY,
+//       name: mousedTree.Visuals.Name + ", ",
+//       size: mousedTree.data.self_data.Cellared,
+//     }
+//     pieTree.preview.set(new_obj)
+//   }
+
+//   static handleMouseLeave(pieTree, mousedTree, svg, d) {
+//     if (mousedTree.temporary) {
+//       const new_obj = { x: d.offsetX, y: d.offsetY, name: "", size: "" }
+//       pieTree.preview.set(new_obj)
+//       mousedTree.direction = false
+//       PieBakery.BakePie(mousedTree, false, svg, true)
+//     }
+//   }
+
+//   static handleMouseEnter(pieTree, mousedTree, svg, d) {
+//     if (!pieTree.temporary) {
+//       mousedTree.direction = true
+//       PieBakery.BakePie(mousedTree, true, svg, true)
+//       PieBakery.BakePie(mousedTree, false, svg, true)
+//     }
+//   }
+  
+//   /**
+//    * A method that undoes ShrinkToDepthN. We store in each pie element the "old"
+//    * radius, and so this method just sets the radius to such old measurements
+//    * @param {*} root 
+//    */
+//   static ResetRadius(root){
+//     console.log("node pre-transformation: ", root)
+//     root.Measurements.radius = root.Measurements.initialRadius
+//     console.log("node post-transformation: ", root)
+//     root.Children.forEach((child) => {
+//       PieBakery.ResetRadius(child)
+//     })
+//   }
+//   /**
+//    * 
+//    * The "focus" method - beginning at the root we shrink all shelves
+//    * up to a target depth N. This is activated when a slice of the chart
+//    * is clicked (to focus)
+//    * 
+//    * @param {*} root pieTree root
+//    * @param {*} depth desired depth to continue to
+//    * @param {*} shrinkParams: {
+//       currRadius,
+//       radiusChange
+//    * }
+//    */
+//   static ShrinkToDepthN(root, target_depth, curr_depth, shrinkParams) {
+//     if(curr_depth < target_depth){
+//       root.Measurements.radius = {
+//         init: shrinkParams.currRadius,
+//         target: shrinkParams.currRadius + shrinkParams.radiusChange
+//       }
+//       const newShrinkParams = {
+//         currRadius:  shrinkParams.currRadius + shrinkParams.radiusChange,
+//         radiusChange: shrinkParams.radiusChange
+//       }
+//       root.Children.forEach((child) => {
+//         PieBakery.ShrinkToDepthN(child, target_depth, curr_depth + 1, newShrinkParams)
+//       })
+//     }
+//     else if(curr_depth === target_depth){
+//       root.Measurements.radius.init = shrinkParams.currRadius
+//       //no need to alter the target
+//     }
+//     else{
+//       throw Error("Should not be shrinking past current depth")
+//     }
+//   }
+// }

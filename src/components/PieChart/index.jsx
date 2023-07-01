@@ -90,7 +90,7 @@ function PieChart({ width, height, data }) {
     const max_entries = 15
     
     
-
+    const nodes = []
     console.log("depth: ",  depth)
     const pieTree = {}
     const prepArgs = {
@@ -100,23 +100,21 @@ function PieChart({ width, height, data }) {
         preview: {set: setPreview, get: preview}
         },
       key: [],
+      nodes: [],
       ParentRadius: 50,
       Angles: {startAngle: 0, endAngle: 2*Math.PI},
       TEMP_color_index: max_entries,
       root: pieTree,
       depth: 0
     }
-
-
     PieBakery.PrepPie(prepArgs)
-
     pieTree.temporary = false
     pieTree.direction = true
     pieTree.root = true
-
+    pieTree.nodes.sort((a,b) => a.depth - b.depth)
     console.log("final tree: ", pieTree)
 
-    const untranslated_svg = d3.select(svgRef.current)
+
     const svg = d3
       .select(svgRef.current)
       .selectAll("#Chart-Render")
@@ -124,10 +122,10 @@ function PieChart({ width, height, data }) {
       .join("g")
       .attr("id", "Chart-Render")
       .attr("transform", "translate(" + width / 2 + "," + height / 2 + ")")
-    
-    console.log('svg from index: ', svg)
-    PieBakery.BakePie(pieTree, false, svg, untranslated_svg)
+  
 
+    //PieBakery.BakePie(pieTree, false, svg, true)
+    PieBakery.BakePieIterative(true, false, 0, pieTree.nodes, svg)
   }, [])
 
   return (
