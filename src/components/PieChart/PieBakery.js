@@ -1,6 +1,5 @@
 import * as d3 from "d3"
 import { BrowserText } from "../../utils"
-import { isElementAccessExpression } from "typescript"
 import { PieUtil } from "./PieUtil"
 
 export class PieBakery {
@@ -70,10 +69,15 @@ export class PieBakery {
     params.blankTree.root_node = params.root
     params.blankTree.Children = []
     params.blankTree.key = params.key
+    params.blankTree.focusedLayer = params.focusedLayer
     params.blankTree.Measurements = {
       radius: {
         init: params.ParentRadius,
         target: params.ParentRadius + params.config.radiusChange,
+      },
+      currRad: {
+        init: null,
+        target: null
       },
       initialRadius: {
         init: params.ParentRadius,
@@ -118,17 +122,14 @@ export class PieBakery {
         TEMP_color_index: params.TEMP_color_index,
         depth: params.depth + 1,
         root: params.root,
-        nodes: params.nodes
+        nodes: params.nodes,
+        focusedLayer: params.focusedLayer
       }
       PieBakery.PrepPie(child_params)
       params.blankTree.Children.push(child_tree)
     })
   }
   static BakePieIterative(direction, initial, index, nodes, svg) {
-    //TODO: current issue
-    //the on end is not traversing through
-    //perhaps manual check for if it doesn't get triggered?
-    console.log("index: ", index)
     const pieTree = nodes[index]
     const PieID = pieTree.key.join("-")
     let TEMP_index
@@ -148,37 +149,42 @@ export class PieBakery {
 
     const pieLine = pieTree.PieFunc(pieTree.data.child_data)
 
-    const customArc = (r) =>
+    const customArc = (inner, outer) =>
       d3
         .arc()
-        .innerRadius(pieTree.Measurements.radius.init)
-        .outerRadius(pieTree.Measurements.radius.init + r)
+        .innerRadius(inner)
+        .outerRadius(inner + outer)
 
     svg
       .selectAll(`#pie${PieID}`)
       .data(pieLine)
       .join(
         (enter) => {
-            console.log("entering")
             return enter.append("path")
 
         },
         (update) => {
-          console.log("updating")
-          let start_radius = pieTree.Measurements.currRadius ?? 0
-          let target_radius
+          let start_outer_radius = pieTree.Measurements.currRad.target ?? 0
+          //let start_radius = pieTree.Measurements.currRadius ?? 0
+          let target_outer_radius
           if (initial) {
-            target_radius = start_radius
+            target_outer_radius = start_outer_radius
           } else if (pieTree.direction) {
-            target_radius =
+            target_outer_radius =
               pieTree.Measurements.radius.target -
               pieTree.Measurements.radius.init
           } else {
-            target_radius = 0
+            target_outer_radius = 0
           }
-          let animation_duration = 200
-          if(start_radius === target_radius){
-            animation_duration = 100
+          let animation_duration = 150
+          if(start_outer_radius === target_outer_radius){
+            animation_duration = 1
+          }
+          let start_inner_radius = pieTree.Measurements.currRad.init
+          let target_inner_radius = pieTree.Measurements.radius.init
+
+          if(!start_inner_radius){
+            start_inner_radius = target_inner_radius
           }
           return update
               .transition()
@@ -186,15 +192,16 @@ export class PieBakery {
               .tween("expand-graph", function () {
                 "entering animation"
                 return function (t) {
-                  console.log("a")
-                  const radius = d3.interpolate(start_radius, target_radius)(t)
-                  pieTree.Measurements.currRadius = radius
-                  svg.selectAll(`#pie${PieID}`).attr("d", customArc(radius))
+                  const outer_radius = d3.interpolate(start_outer_radius, target_outer_radius)(t)
+                  const inner_radius = d3.interpolate(start_inner_radius, target_inner_radius)(t)
+                  pieTree.Measurements.currRad.target = outer_radius
+                  pieTree.Measurements.currRad.init = inner_radius
+                  svg.selectAll(`#pie${PieID}`).attr("d", customArc(inner_radius, outer_radius))
                 }
               })
               //render the next node in nodes
               .on('end', () => {
-                console.log("transition ended")
+
                 if(!direction){
                   if(index > 0){
                     PieBakery.BakePieIterative(direction, initial, index - 1, nodes, svg)
@@ -314,6 +321,7 @@ export class PieBakery {
    *    currRadius: number
    *    radius: {init:number , target: number}
    *    initialRadius: {init:number, target: number}
+   *    currRad: {init, target}
    *    angle: {start: number, end: number}
    * }
    * direction: boolean
@@ -335,9 +343,11 @@ export class PieBakery {
    * PieFunc: f
    * Children: pieTree[]
    * }
+   * Focused_layer: number
    *
    * The function to render a pie from a tree (with a tree representing a pie chart)
    */
+  /*
   static BakePie(pieTree, initial, svg, top_down) {
     const PieID = pieTree.key.join("-")
     let TEMP_index
@@ -494,7 +504,7 @@ export class PieBakery {
     //     PieBakery.BakePie(childPie, initial, svg)
     //   }
     // })
-  }
+  } */
 }
 //   static closeChild(root) {
 //     root.direction = false

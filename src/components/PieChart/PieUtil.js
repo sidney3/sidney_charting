@@ -10,26 +10,82 @@ export class PieUtil{
   }
 
   static handleClick(pieTree, mousedTree, svg, d) {
-    if (mousedTree.temporary) {
+
+    console.log("current focused depth: ", mousedTree.root_node.focused_depth)
+    if (mousedTree.depth > mousedTree.root_node.focused_depth) {
+      console.log("new depth: ", mousedTree.depth)
+      mousedTree.root_node.focused_depth = mousedTree.depth
+      
+      //close all nodes deeper than focused node
+      pieTree.nodes.forEach((child) => {
+        if(child.depth > mousedTree.depth){
+          child.direction = false
+          child.temporary = true
+        }
+      })
+      //shrink all nodes shallower than focused node
       PieUtil.ShrinkToDepthN(pieTree.root_node, mousedTree.depth, 0, {
         currRadius: pieTree.root_node.Measurements.radius.init,
         radiusChange: 30
       })
       mousedTree.temporary = false
       mousedTree.direction = true
-      pieTree.nodes.forEach((child) => {
-        console.log("child data: ", child.data.child_data)
-        child.data.child_data.push(null)
-        child.data.child_data.pop()
-      })
+      //re-render
       PieBakery.BakePieIterative(true, false, 0, pieTree.nodes, svg)
     } else {
+      //reset
+      //mousedTree.depth.set(0)
+      mousedTree.root_node.focused_depth = 0
+      console.log("closing children")
       PieUtil.ResetRadius(pieTree.root_node)
-      PieUtil.closeChild(mousedTree)
+      //PieUtil.closeChild(mousedTree)
+      pieTree.nodes.forEach((child) => {
+        if(child.depth >= 1){
+          // mousedTree.depth){
+          child.direction = false
+          child.temporary = true
+        }
+      })
+      //re-render
       PieBakery.BakePieIterative(false, false, pieTree.nodes.length - 1, pieTree.nodes, svg)
-     // PieBakery.BakePie(pieTree.root_node, false, svg, true)
+     // PieUtil.ResetRadius(pieTree.root_node)
     }
   }
+
+  static handleClick2(pieTree, mousedTree, svg, d) {
+    if (mousedTree.temporary) {
+      pieTree.nodes.forEach((child) => {
+        if(child.depth > mousedTree.depth){
+          child.direction = false
+          child.temporary = true
+        }
+      })
+      //TODO: bug
+      //secondaries won't grow once someone else grows
+     // PieUtil.ResetRadius(pieTree.root_node)
+      //PieBakery.BakePieIterative(false, false, pieTree.nodes.length - 1, pieTree.nodes, svg)
+      PieUtil.ShrinkToDepthN(pieTree.root_node, mousedTree.depth, 0, {
+        currRadius: pieTree.root_node.Measurements.radius.init,
+        radiusChange: 30
+      })
+      mousedTree.temporary = false
+      mousedTree.direction = true
+      PieBakery.BakePieIterative(true, false, 0, pieTree.nodes, svg)
+    } else {
+      console.log("closing children")
+      PieUtil.ResetRadius(pieTree.root_node)
+      //PieUtil.closeChild(mousedTree)
+      pieTree.nodes.forEach((child) => {
+        if(child.depth >= mousedTree.depth){
+          child.direction = false
+          child.temporary = true
+        }
+      })
+      PieBakery.BakePieIterative(false, false, pieTree.nodes.length - 1, pieTree.nodes, svg)
+     // PieUtil.ResetRadius(pieTree.root_node)
+    }
+  }
+
 
   static handleMouseMove(pieTree, mousedTree, svg, d) {
     const new_obj = {

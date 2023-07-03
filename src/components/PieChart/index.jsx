@@ -5,6 +5,7 @@ import { PieBakery } from "./PieBakery"
 
 function PieChart({ width, height, data }) {
   const svgRef = useRef()
+  const [focusedLayer, setFocusedLayer] = useState(0)
 
   const [preview, setPreview] = useState({
     name: "", x: 0, y:0, size: ""
@@ -89,8 +90,6 @@ function PieChart({ width, height, data }) {
 
     const max_entries = 15
     
-    
-    const nodes = []
     console.log("depth: ",  depth)
     const pieTree = {}
     const prepArgs = {
@@ -105,6 +104,10 @@ function PieChart({ width, height, data }) {
       Angles: {startAngle: 0, endAngle: 2*Math.PI},
       TEMP_color_index: max_entries,
       root: pieTree,
+      focusedLayer: {
+        get: focusedLayer,
+        set: setFocusedLayer
+      },
       depth: 0
     }
     PieBakery.PrepPie(prepArgs)
@@ -113,7 +116,7 @@ function PieChart({ width, height, data }) {
     pieTree.root = true
     pieTree.nodes.sort((a,b) => a.depth - b.depth)
     console.log("final tree: ", pieTree)
-
+    pieTree.root_node.focused_depth = 0
 
     const svg = d3
       .select(svgRef.current)
@@ -125,6 +128,7 @@ function PieChart({ width, height, data }) {
   
 
     //PieBakery.BakePie(pieTree, false, svg, true)
+    //PieBakery.BakePieIterative(true, true, 0, pieTree.nodes, svg)
     PieBakery.BakePieIterative(true, false, 0, pieTree.nodes, svg)
   }, [])
 
