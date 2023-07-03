@@ -108,7 +108,8 @@ function PieChart({ width, height, data }) {
         get: focusedLayer,
         set: setFocusedLayer
       },
-      depth: 0
+      depth: 0,
+      parent: null
     }
     PieBakery.PrepPie(prepArgs)
     pieTree.temporary = false
@@ -117,6 +118,7 @@ function PieChart({ width, height, data }) {
     pieTree.nodes.sort((a,b) => a.depth - b.depth)
     console.log("final tree: ", pieTree)
     pieTree.root_node.focused_depth = 0
+    pieTree.root_node.depth_tracker = [0]
 
     const svg = d3
       .select(svgRef.current)

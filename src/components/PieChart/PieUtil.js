@@ -10,82 +10,29 @@ export class PieUtil{
   }
 
   static handleClick(pieTree, mousedTree, svg, d) {
-
-    console.log("current focused depth: ", mousedTree.root_node.focused_depth)
+    console.log("moused tree: ", mousedTree, "focused depth: ", mousedTree.root_node.focused_depth)
     if (mousedTree.depth > mousedTree.root_node.focused_depth) {
-      console.log("new depth: ", mousedTree.depth)
       mousedTree.root_node.focused_depth = mousedTree.depth
-      
-      //close all nodes deeper than focused node
-      pieTree.nodes.forEach((child) => {
-        if(child.depth > mousedTree.depth){
-          child.direction = false
-          child.temporary = true
-        }
-      })
-      //shrink all nodes shallower than focused node
-      PieUtil.ShrinkToDepthN(pieTree.root_node, mousedTree.depth, 0, {
-        currRadius: pieTree.root_node.Measurements.radius.init,
-        radiusChange: 30
-      })
-      mousedTree.temporary = false
-      mousedTree.direction = true
-      //re-render
+      PieUtil.focusNode(mousedTree)
       PieBakery.BakePieIterative(true, false, 0, pieTree.nodes, svg)
-    } else {
-      //reset
-      //mousedTree.depth.set(0)
-      mousedTree.root_node.focused_depth = 0
-      console.log("closing children")
-      PieUtil.ResetRadius(pieTree.root_node)
-      //PieUtil.closeChild(mousedTree)
-      pieTree.nodes.forEach((child) => {
-        if(child.depth >= 1){
-          // mousedTree.depth){
-          child.direction = false
-          child.temporary = true
+    } else {  
+        if(mousedTree.depth === 1){
+          PieUtil.ResetRadius(pieTree.root_node)
+          pieTree.nodes.forEach((child) => {
+            if(child.depth >= 1){
+              child.direction = false
+              child.temporary = true
+            }
+          })
         }
-      })
-      //re-render
-      PieBakery.BakePieIterative(false, false, pieTree.nodes.length - 1, pieTree.nodes, svg)
-     // PieUtil.ResetRadius(pieTree.root_node)
+        else{
+          PieUtil.ResetRadius(pieTree.root_node)
+          PieUtil.focusNode(mousedTree.parent)
+        }   
+        mousedTree.root_node.focused_depth = mousedTree.depth - 1
+        PieBakery.BakePieIterative(false, false, pieTree.nodes.length - 1, pieTree.nodes, svg)
     }
-  }
-
-  static handleClick2(pieTree, mousedTree, svg, d) {
-    if (mousedTree.temporary) {
-      pieTree.nodes.forEach((child) => {
-        if(child.depth > mousedTree.depth){
-          child.direction = false
-          child.temporary = true
-        }
-      })
-      //TODO: bug
-      //secondaries won't grow once someone else grows
-     // PieUtil.ResetRadius(pieTree.root_node)
-      //PieBakery.BakePieIterative(false, false, pieTree.nodes.length - 1, pieTree.nodes, svg)
-      PieUtil.ShrinkToDepthN(pieTree.root_node, mousedTree.depth, 0, {
-        currRadius: pieTree.root_node.Measurements.radius.init,
-        radiusChange: 30
-      })
-      mousedTree.temporary = false
-      mousedTree.direction = true
-      PieBakery.BakePieIterative(true, false, 0, pieTree.nodes, svg)
-    } else {
-      console.log("closing children")
-      PieUtil.ResetRadius(pieTree.root_node)
-      //PieUtil.closeChild(mousedTree)
-      pieTree.nodes.forEach((child) => {
-        if(child.depth >= mousedTree.depth){
-          child.direction = false
-          child.temporary = true
-        }
-      })
-      PieBakery.BakePieIterative(false, false, pieTree.nodes.length - 1, pieTree.nodes, svg)
-     // PieUtil.ResetRadius(pieTree.root_node)
     }
-  }
-
 
   static handleMouseMove(pieTree, mousedTree, svg, d) {
     const new_obj = {
@@ -159,5 +106,22 @@ export class PieUtil{
     else{
       throw Error("Should not be shrinking past current depth")
     }
+  }
+
+  static focusNode(node){
+      //close all nodes deeper than focused node
+      node.nodes.forEach((child) => {
+        if(child.depth > node.depth){
+          child.direction = false
+          child.temporary = true
+        }
+      })
+      //shrink all nodes shallower than focused node
+      PieUtil.ShrinkToDepthN(node.root_node, node.depth, 0, {
+        currRadius: node.root_node.Measurements.radius.init,
+        radiusChange: 30
+      })
+      node.temporary = false
+      node.direction = true
   }
 }

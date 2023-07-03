@@ -88,6 +88,7 @@ export class PieBakery {
         endAngle: params.Angles.endAngle,
       },
     }
+    params.blankTree.parent = params.parent
     params.blankTree.direction = false
     params.blankTree.PieFunc = objPie
     params.blankTree.temporary = true
@@ -123,7 +124,8 @@ export class PieBakery {
         depth: params.depth + 1,
         root: params.root,
         nodes: params.nodes,
-        focusedLayer: params.focusedLayer
+        focusedLayer: params.focusedLayer,
+        parent: params.blankTree
       }
       PieBakery.PrepPie(child_params)
       params.blankTree.Children.push(child_tree)
