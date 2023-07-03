@@ -288,6 +288,11 @@ export class PieBakery {
         .attr(`id`, `pieText${PieID}`)
         .style("font-size", 10)
         .attr("y", "0.32em")
+        .on("click", function (d, i) {
+          const mousedIndex = i.index
+          const mousedTree = pieTree.Children[mousedIndex]
+          PieUtil.handleClick(pieTree, mousedTree, svg, d)
+        })
         // .on('mouseover', (d) => {
         //   const mousedIndex = d.fromElement.__data__.index
         //   const mousedTree = pieTree.Children[mousedIndex]
