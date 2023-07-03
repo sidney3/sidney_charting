@@ -15,7 +15,8 @@ export class PieUtil{
       mousedTree.root_node.focused_depth = mousedTree.depth
       PieUtil.focusNode(mousedTree)
       PieBakery.BakePieIterative(true, false, 0, pieTree.nodes, svg)
-    } else {  
+    } 
+    else {  
         if(mousedTree.depth === 1){
           PieUtil.ResetRadius(pieTree.root_node)
           pieTree.nodes.forEach((child) => {

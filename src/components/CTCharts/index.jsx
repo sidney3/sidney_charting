@@ -93,8 +93,8 @@ function CTCharts() {
         Change Dataset
       </button>
     </div>
-      <Test />
-      {/* <BarChart height={500} width={500} data={wineByYear} /> */}
+      {/* <Test /> */}
+      <BarChart total_height={500} total_width={500} data={wineByYear} />
       <PieCharts height={500} width={500} data={wineByCountry} />
       {/* <PieChart height={500} width={500} data={wineByCountry} /> */}
     </div>

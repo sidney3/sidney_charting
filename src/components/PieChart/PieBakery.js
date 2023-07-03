@@ -236,6 +236,15 @@ export class PieBakery {
         const mousedTree = pieTree.Children[i.index]
         PieUtil.handleClick(pieTree, mousedTree, svg, d)
       })
+
+    let target_opacity
+
+    if(pieTree.root_node.focused_depth == pieTree.depth){
+      target_opacity = 1
+    }
+    else{
+      target_opacity = 0
+    }
     if (pieTree.direction) {
       svg
         .selectAll(`#pieText${PieID}`)
@@ -247,9 +256,9 @@ export class PieBakery {
               .text((d) => pieTree.Children[d.index].Visuals.Name),
           (update) => {
             if (pieTree.is_root) {
-              return update.attr("opacity", 1)
+              return update.attr("opacity", target_opacity)
             }
-            return update.transition().duration(1000).attr("opacity", 1)
+            return update.transition().duration(1000).attr("opacity", target_opacity)
           }
         )
 
