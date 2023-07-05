@@ -8,9 +8,10 @@ import PieCharts from "../PieChart"
 import BarChart from "../BarChart"
 import "./index.css"
 
-const CellaredSOTdata = require("./mock_data/bottlesovertime.json").map(
-  (d) => [Math.max(0, d.Date), Math.max(0, d.Cellared)]
-)
+const CellaredSOTdata = require("./mock_data/bottlesovertime.json").map((d) => [
+  Math.max(0, d.Date),
+  Math.max(0, d.Cellared),
+])
 const PriceSOTdata = require("./mock_data/priceovertime.json").map((d) => [
   Math.max(0, d.Date),
   Math.max(0, d.Price),
@@ -24,6 +25,9 @@ const largeCellaredOTdata =
 
 const wineByYear = require("./mock_data/winebyyear.json")
 const wineByCountry = require("./mock_data/winebycountry.json")
+//const manyLayers = require("./mock_data/manylayersexample.json")
+
+//console.log(manyLayers)
 
 function RenderDataPreview({ dataPreview, dataArr }) {
   return dataArr.map((d) => {
@@ -71,31 +75,32 @@ function CTCharts() {
   return (
     <div>
       <div>
-      <RenderDataPreview dataPreview={dataPreview} dataArr={dataArr} />
-      <SizeOverTime
-        h={600}
-        w={600}
-        data={dataArr}
-        dataPreview={dataPreview}
-        setDataPreview={setDataPreview}
-      />
-      <button
-        onClick={() => {
-          setDataArr([
-            {
-              data: largeCellaredOTdata,
-              name: "Large Cellared over time data",
-              key: 1,
-            },
-          ])
-        }}
-      >
-        Change Dataset
-      </button>
-    </div>
+        <RenderDataPreview dataPreview={dataPreview} dataArr={dataArr} />
+        <SizeOverTime
+          h={600}
+          w={600}
+          data={dataArr}
+          dataPreview={dataPreview}
+          setDataPreview={setDataPreview}
+        />
+        <button
+          onClick={() => {
+            setDataArr([
+              {
+                data: largeCellaredOTdata,
+                name: "Large Cellared over time data",
+                key: 1,
+              },
+            ])
+          }}
+        >
+          Change Dataset
+        </button>
+      </div>
       {/* <Test /> */}
       <BarChart total_height={500} total_width={500} data={wineByYear} />
       <PieCharts height={500} width={500} data={wineByCountry} />
+
       {/* <PieChart height={500} width={500} data={wineByCountry} /> */}
     </div>
   )

@@ -119,6 +119,9 @@ function SizeOverTime({ h, w, data, dataPreview, setDataPreview }) {
     //and append max zero item to all non-max lists
     //This can happen in SizeOverTime
 
+    // const height = h - 2 * DEFAULT_OFFSETS.x
+    // const width = w - 2 * DEFAULT_OFFSETS.y
+
     const processed_data = PathManager.pre_process_datums(data, timeView,h,w)
     
 
@@ -192,6 +195,22 @@ function SizeOverTime({ h, w, data, dataPreview, setDataPreview }) {
         }
       })
 
+    // const x = d3.scaleBand()
+    //   .range([processed_data.bounds.x_min, processed_data.bounds.x_max])
+    //   .domain(ticks(processed_data.bounds.y_min, processed_data.bounds.y_max, X_DATA_POINTS))
+    //   .padding(0.2)
+
+    // svg.append('g')
+    // // .selectAll("#x-axis")
+    // //   .data([null])
+    // //   .join('g')
+    //   .attr('transform', `translate(0,${height})`)
+    //   .call(d3.axisBottom(x))
+    //   .selectAll('text')
+    //   .attr("transform", "translate(-10,0)rotate(-45)")
+    //   .style('text-anchor', 'end')
+      //.attr("transform", "translate(0," + h + ")")
+
     const y_axis_coords = ticks(
       DEFAULT_OFFSETS.y,
       h - DEFAULT_OFFSETS.y,
@@ -223,6 +242,7 @@ function SizeOverTime({ h, w, data, dataPreview, setDataPreview }) {
       .attr("x", (d, i) => x_axis_coords[i])
       .attr("y", h - DEFAULT_OFFSETS.y / 2)
       .style("text-anchor", "middle")
+
   }, [h, w, data, timeView])
 
   /*

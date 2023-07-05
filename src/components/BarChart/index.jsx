@@ -6,20 +6,21 @@ function BarChart({total_height, total_width, data}){
 
   useEffect(() => {
     // set the dimensions and margins of the graph
-      var margin = {top: 30, right: 30, bottom: 70, left: 60},
+      const margin = {top: 30, right: 30, bottom: 70, left: 60},
       width = total_width - margin.left - margin.right,
       height = total_height - margin.top - margin.bottom;
 
-      // append the svg object to the body of the page
       var svg = d3.select(svgRef.current)
-      .append("svg")
+      .selectAll("#barChartSVG")
+      .data([null])
+      .join('svg')
+      .attr('id', 'barChartSVG')
       .attr("width", width + margin.left + margin.right)
       .attr("height", height + margin.top + margin.bottom)
       .append("g")
       .attr("transform",
             "translate(" + margin.left + "," + margin.top + ")");
 
-      // Parse the Data
       // X axis
       var x = d3.scaleBand()
       .range([ 0, width ])
