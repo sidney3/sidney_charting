@@ -25,7 +25,7 @@ const largeCellaredOTdata =
 
 const wineByYear = require("./mock_data/winebyyear.json")
 const wineByCountry = require("./mock_data/winebycountry.json")
-//const manyLayers = require("./mock_data/manylayersexample.json")
+const wineByCountryForBarChart = require("./mock_data/winebycountry.json").Children
 
 //console.log(manyLayers)
 
@@ -61,6 +61,11 @@ function CTCharts() {
 
   const [dataPreview, setDataPreview] = useState({ 0: 0, 1: 1 })
 
+  const [barChartData, setBarChartData] = useState(wineByYear)
+
+  //very temp idea lol
+  const [barChartIndex, setBarChartIndex] = useState(0)
+
   //we pass data in the form
   /*
   [
@@ -76,6 +81,7 @@ function CTCharts() {
     <div>
       <div>
         <RenderDataPreview dataPreview={dataPreview} dataArr={dataArr} />
+        
         <SizeOverTime
           h={600}
           w={600}
@@ -94,14 +100,28 @@ function CTCharts() {
             ])
           }}
         >
-          Change Dataset
+          Change Line Graph Dataset
         </button>
       </div>
       {/* <Test /> */}
-      <BarChart total_height={500} total_width={500} data={wineByYear} />
-      <PieCharts height={500} width={500} data={wineByCountry} />
+      <div>
+      <BarChart total_height={500} total_width={500} data={barChartData} />
+      <button onClick={() => {
+        if(barChartIndex % 2 === 0){
+          setBarChartData(wineByCountryForBarChart)
+        }
+        else {
+          setBarChartData(wineByYear)
+        }
+        setBarChartIndex((index) => index + 1)
+      }}>
+        Change Bar Chart Dataset</button>
 
+      <div>
+      <PieCharts height={500} width={500} data={wineByCountry} />
+      </div>
       {/* <PieChart height={500} width={500} data={wineByCountry} /> */}
+      </div>
     </div>
   )
 }

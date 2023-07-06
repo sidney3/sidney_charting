@@ -53,7 +53,7 @@ export class PieBakery {
     const tempColorScale = d3
       .scaleLinear()
       .domain([0, params.TEMP_color_index])
-      .range(["maroon", "tan"])
+      .range(["#851b48", "#e9a363"])
 
     const objPie = d3
       .pie()
@@ -287,6 +287,7 @@ export class PieBakery {
         })
         .attr(`id`, `pieText${PieID}`)
         .style("font-size", 10)
+        .attr('fill', 'white')
         .attr("y", "0.32em")
         .on("click", function (d, i) {
           if(pieTree.direction){

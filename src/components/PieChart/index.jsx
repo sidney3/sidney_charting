@@ -13,7 +13,14 @@ function PieChart({ width, height, data }) {
 
   useEffect(() => {
     
-
+    d3.selection.prototype.moveToBack = function() {  
+      return this.each(function() { 
+          var firstChild = this.parentNode.firstChild; 
+          if (firstChild) { 
+              this.parentNode.insertBefore(this, firstChild); 
+          } 
+      });
+  };
     d3.selection.prototype.moveToFront = function() {  
       return this.each(function(){
         this.parentNode.appendChild(this);
@@ -21,6 +28,17 @@ function PieChart({ width, height, data }) {
     };
 
     const svg = d3.select(svgRef.current)
+    
+    svg.selectAll('boundingBox')
+      .data([null])
+      .join('rect')
+      .attr('x', 0)
+      .attr('y', 0)
+      .attr('height', height)
+      .attr('width', width)
+      .attr('fill', 'transparent')
+      .attr('stroke', 'black')
+      .moveToBack()
 
     const toolTipGroup = svg.selectAll(`#toolTips`)
     .data([preview])
@@ -33,7 +51,8 @@ function PieChart({ width, height, data }) {
       .attr('class', 'group')
 
     newToolTipGroup.append('text')
-      .style('font-size', 10)
+      .style('font-size', 16)
+      .style('fill', 'black')
 
     // toolTipGroup.select('rect')
     //   .attr('x',(d) => d.x)
