@@ -260,6 +260,9 @@ function SizeOverTime({ h, w, data, dataPreview, setDataPreview }) {
           //second path with the same line as the above
           .selectAll(`#linegraph${index}`)
           .remove()
+        svg
+          .selectAll(`#previewPath${index}`)
+            .remove()
 
         svg.selectAll(`#g${index}`).remove()
       }

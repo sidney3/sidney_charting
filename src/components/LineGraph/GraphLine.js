@@ -2,7 +2,8 @@ import { PathManager } from "./PathManager"
 import { interpolatePath } from "d3-interpolate-path"
 import * as d3 from "d3"
 import { DEFAULT_OFFSETS } from "../../constants"
-import { default_key_to_color } from "../../utils"
+import { default_key_to_color, unix_to_MDY, locate_y } from "../../utils"
+import { PreviewManager } from "./previewManager"
 
 export class GraphLine {
   //params:
@@ -52,6 +53,8 @@ export class GraphLine {
   also adds event listeners for mouseover
   */
   static load_line(params) {
+
+
     const new_line = PathManager.transform_dataset({
       data: params.data[params.index],
       height: params.chart_details.height,
@@ -59,7 +62,19 @@ export class GraphLine {
       formulae: params.data_details.formulae,
     })
 
+    //console.log("y formula: ", params.data_details.formulae.y_formula)
+    const line_maker = d3
+    .line()
+    .x((d) => params.data_details.formulae.x_formula(d[0]))
+    .y((d) => params.data_details.formulae.y_formula(d[1]))
+    .curve(d3.curveBasis)
+
+    console.log()
+
     const svg = d3.select(params.svg)
+
+    PreviewManager.make_preview(svg, params.index)
+
 
     svg.selectAll(`#g${params.index}`).remove()
 
@@ -73,10 +88,10 @@ export class GraphLine {
         y_max: 100,
       }
     }
-    svg
+    const path = svg
       //the visible line
       .selectAll(`#linegraph${params.index}`)
-      .data([new_line])
+      .data([line_maker])
       .join(
         (enter) =>
           enter
@@ -85,13 +100,13 @@ export class GraphLine {
               const updateOldGraph = async () => {
                 params.states.oldGraph.set((currOldGraph) => {
                   const oldGraphCopy = { ...currOldGraph }
-                  oldGraphCopy[params.index] = d
+                  oldGraphCopy[params.index] = d(params.data[params.index])
                   return oldGraphCopy
                 })
                 await new Promise((resolve) => setTimeout(resolve, 0)) // Add a delay to see the updates
               }
               updateOldGraph()
-              return d
+              return d(params.data[params.index])
             })
             .attr("id", `linegraph${params.index}`)
             .attr(
@@ -107,7 +122,7 @@ export class GraphLine {
             const updateOldGraph = async () => {
               params.states.oldGraph.set((currOldGraph) => {
                 const oldGraphCopy = { ...currOldGraph }
-                oldGraphCopy[params.index] = d
+                oldGraphCopy[params.index] = d(params.data[params.index])
                 return oldGraphCopy
               })
               await new Promise((resolve) => setTimeout(resolve, 0)) // Add a delay to see the updates
@@ -116,14 +131,26 @@ export class GraphLine {
             updateOldGraph()
 
             if (!store) {
-              return interpolatePath(d, d)
+              return interpolatePath(d(params.data[params.index]), d(params.data[params.index]))
             } else {
-              return interpolatePath(store, d)
+              return interpolatePath(store, d(params.data[params.index]))
             }
           })
       )
-    //absolutely no idea why it's faster to make new such components rather than re-using old ones
-    //but it absolutely is ????
+      let preview_location = [0,0]
+      const update = () => {
+        svg.selectAll(`#previewRect`)
+        .data([preview_location])
+        .join(
+          (enter) => enter.append('rect').attr('x', preview_location[0]).attr('y', preview_location[1]),
+          (update) => update
+          .attr('x', preview_location[0])
+          .attr('y', preview_location[1])
+        )
+        .attr('id', 'previewRect')
+        .attr('height', 5)
+        .attr('width', 5)
+      }
     svg
       .append("rect")
       .attr("id", `g${params.index}`)
@@ -134,12 +161,37 @@ export class GraphLine {
       .attr("height", params.chart_details.height - 2 * DEFAULT_OFFSETS.y)
       .attr("width", params.chart_details.width - 2 * DEFAULT_OFFSETS.x)
       .on("mousemove", function (d) {
+
+        //we try and get the y-coord of a line
+      
+        // for(let graph_index = 0;
+        //     graph_index < params.data.length;
+        //     graph_index += 1)
+        //     {
+        //       const line_path = svg.selectAll(`#linegraph${graph_index}`)
+
+        //       console.log("line found: ", line_path)
+        //       console.log("y found: ", locate_y(line_path, d.offsetX), "for index: ", graph_index)
+
+        //     }
+
         //D3 is great - it will automatically give mouseover priority to one of the indices
         if (params.states.labelHidden.get) {
           params.states.labelHidden.set(false)
         }
 
         params.states.vertPreview.set(d.offsetX)
+
+        // for(
+        //   let graph_index = 0;
+        //   graph_index < params.data.length;
+        //   graph_index += 1
+        // ) {
+          //  const index_path = svg.selectAll(`#linegraph${graph_index}`)
+          //   const preview_y = locate_y(index_path, d.offsetX)
+          //   PreviewManager.update_preview(svg, graph_index, d.offsetX, preview_y, "Hello", 20)
+
+        // }
 
         //we need to do this asyncronously as setState is an async function
         //we iterate through our different "graphs" (datums)
@@ -158,6 +210,12 @@ export class GraphLine {
               data: params.data[graph_index],
             })
 
+            const index_path = svg.selectAll(`#linegraph${graph_index}`)
+            const preview_y = locate_y(index_path, d.offsetX)
+            PreviewManager.update_preview(svg, graph_index, d.offsetX, preview_y, data_point.datum, 40)
+            
+            
+            //update preview and also location
             params.states.dataPreview.set((oldPreview) => {
               const previewCopy = { ...oldPreview }
               previewCopy[params.data_details.keys[graph_index]] = data_point.datum
@@ -168,8 +226,6 @@ export class GraphLine {
         }
         update_Preview()
       })
-
-    return new_line.bounds
   }
 
   /*

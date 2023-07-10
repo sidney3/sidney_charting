@@ -79,6 +79,35 @@ export function findPrime(num){
 
 }
 
+export function locate_y(path, x) {
+  // Convert the path to a SVG path element
+  const pathElement = path.node();
+
+  // Get the total length of the path
+  const pathLength = pathElement.getTotalLength();
+
+  // Use binary search to find the point on the path
+  let start = 0;
+  let end = pathLength;
+  let targetLength = x;
+
+  while (start < end) {
+    const middle = (start + end) / 2;
+    const point = pathElement.getPointAtLength(middle);
+
+    if (point.x < targetLength) {
+      start = middle + 1;
+    } else {
+      end = middle;
+    }
+  }
+
+  // Get the final point on the path
+  const finalPoint = pathElement.getPointAtLength(end);
+
+  return finalPoint.y;
+}
+
 //https://stackoverflow.com/a/35373030/14145032
 export var BrowserText = (function () {
   var canvas = document.createElement('canvas'),

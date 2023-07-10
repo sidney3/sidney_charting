@@ -162,8 +162,12 @@ export class PieBakery {
       .data(pieLine)
       .join(
         (enter) => {
-            return enter.append("path")
-
+          let outer_radius = pieTree.Measurements.radius.init
+          if(this.direction){
+            outer_radius = pieTree.Measurements.radius.target
+          }
+          return enter.append("path").attr('d', customArc(pieTree.Measurements.radius.init,outer_radius))
+ 
         },
         (update) => {
           let start_outer_radius = pieTree.Measurements.currRad.target ?? 0

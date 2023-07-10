@@ -150,6 +150,31 @@ export class PathManager {
       .curve(d3.curveBasis)(params.data)
   }
 
+  static findYCoordinateOnLine(xCoordinate, line) {
+    const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    const context = path.getContext('2d');
+    line.context(context)(line.data());
+  
+    const totalLength = path.getTotalLength();
+    const numPoints = 100;
+    const step = totalLength / numPoints;
+    const points = Array.from({ length: numPoints }, (_, i) => {
+      const point = path.getPointAtLength(i * step);
+      return { x: point.x, y: point.y };
+    });
+  
+    const closestPoint = points.reduce((closest, point) => {
+      const distance = Math.abs(point.x - xCoordinate);
+      if (distance < closest.distance) {
+        return { point, distance };
+      }
+      return closest;
+    }, { point: null, distance: Infinity }).point;
+  
+    return closestPoint.y;
+  }
+  
+
   /*generate the horizontal dashes for the graph */
   static get_y_dashes(graph_height, graph_width) {
     const levels = ticks(

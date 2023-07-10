@@ -103,7 +103,7 @@ function CTCharts() {
           Change Line Graph Dataset
         </button>
       </div>
-      {/* <Test /> */}
+      <Test />
       <div>
       <BarChart total_height={500} total_width={500} data={barChartData} />
       <button onClick={() => {

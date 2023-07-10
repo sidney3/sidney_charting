@@ -1,6 +1,8 @@
 import React, {useEffect, useRef} from "react"
 import * as d3 from 'd3'
 import { Button } from "react-native-web"
+import { locate_y } from "../../utils"
+import {PreviewManager} from '../LineGraph/previewManager'
 
 function Test(){
 
@@ -8,164 +10,72 @@ function Test(){
 
   useEffect(() => {
 
-    const width = 300
-    const height = 300
-
-    const initial_radius = 50
-    const final_radius = initial_radius + 50
-
     const svg = d3
     .select(svgRef.current)
+
+    const data = [[0,0], [1,1], [2,3], [4,9]]
+
+    const x = d3.scaleLinear()
+      .domain([0, Math.max(...data.map((d) => d[0]))])
+      .range([0,300])
     
-    //var groups = svg.selectAll('g').data([1,23,4])
+    const y = d3.scaleLinear()
+    .domain([0, Math.max(...data.map((d) => d[1]))])
+    .range([0,300])
 
-    // exit
-    // groups.exit().remove()
+    console.log(x(2))
 
-    // // new
-    // var newGroups = groups.enter()
-    // var newgroup = newGroups.append('g')
-    // newgroup.append('text')
-    // newgroup.append('circle')
+    const line_formula = d3.line()
+      .x((d) => x(d[0]))
+      .y((d) => y(d[1]))
 
-    // // update + new
-    // groups.select('text')
-    //     .text(function(d){ return d; })
-    //     .attr('x', function(d,i){ return i * 20 + 50; })
-    //     .attr('y', function(d){ return d + 20; })
-    //     .attr('dy', -10)
-    // groups.select('circle')
-    //     .attr('cx', function(d,i){ return i * 20 + 50; })
-    //     .attr('cy', function(d){ return d + 20; })
-    //     .attr('r', 10)
+    const path = svg.selectAll(`#dopePath`)
+      .data([line_formula(data)])
+      .join('path')
+      .attr('d',(d) => {
+        console.log(d)
+        return d
+      })
+      .attr('id', 'dopePath')
+      .attr('fill', 'transparent')
+      .attr('stroke', 'black')
 
+    let preview_location = [0,0]
+    const update = () => {
+      svg.selectAll(`#previewRect`)
+      .data([preview_location])
+      .join(
+        (enter) => enter.append('rect').attr('x', preview_location[0]).attr('y', preview_location[1]),
+        (update) => update
+        .attr('x', preview_location[0])
+        .attr('y', preview_location[1])
+      )
+      .attr('id', 'previewRect')
+      .attr('height', 5)
+      .attr('width', 5)
+    }
+
+    PreviewManager.make_preview(svg, 0)
     
-    const toolTipGroup = svg.selectAll(`#toolTip`)
-    .data([null])
-    .enter()
-    .append('g')
-    .attr('id', 'toolTip')
-
-   
-    toolTipGroup.append('text')
-    toolTipGroup.append('rect')
-
-
-    toolTipGroup.select('text')
-      .text('Hola yo soy dora')
+    const largeRect = svg.selectAll(`#largeRect`)
+      .data([null])
+      .join('rect')
+      .attr('id', 'largeRect')
       .attr('x', 0)
-      .attr('y', 20)
-    toolTipGroup.select('rect')
-      .attr('x', 60)
-      .attr('y', 60)
-      .attr('height', 30)
-      .attr('width', 50)
-  
-    // const toolTipGroup = svg.selectAll('#toolTip')
-    //   .data([null])
-    //   .join(
-    //     (enter) =>
-    //     enter
-    //      .append('g')
-    //       .append('rect')
-    //       .append('circle'),
-    //     (update) => update.select('g').select('rect')
-    //       .attr('x', 0)
-    //       .attr('y', 0)
-    //       .attr('height', 20)
-    //       .attr('width', 20)
-    //       // .select('circle')
-    //       // .attr('cx', 50)
-    //       // .attr('cy', 60)
-    //       // .attr('radius', 100)
-    //   )
+      .attr('y', 0)
+      .attr('height', 300)
+      .attr('width', 300)
+      .attr('fill', 'transparent')
+      .attr('stroke', 'black')
+      .on('mousemove', (d) => {
+        console.log(d)
+        const offsetY = locate_y(path, d.offsetX)
+        preview_location = [d.offsetX, offsetY]
+        // update()
+        PreviewManager.update_preview(svg, 0, d.offsetX, offsetY, "hello", 20)
+      })
+    }, [])
 
-
-
-    // let curr_x = {0:0, 1:0}
-    // const renderSquare = (x, i) => {
-    //   svg.selectAll(`#square${i}`)
-    //     .data([curr_x[i]])
-    //     .join(
-    //       (enter) => enter.append('rect'),
-    //       (update) => {
-    //         console.log('updating')
-    //         return update.transition().duration(3000)
-    //       .tween('set-x-tween', function() {
-    //         const target = x
-    //         const init = curr_x[i]
-    //         return function(t){
-    //           const distance = d3.interpolate(init, target)(t)
-    //           console.log(distance)
-    //           curr_x[i] = distance
-    //           svg.selectAll(`#square${i}`).attr('x', distance)
-    //         }
-    //       })
-    //       //.end(() => {curr_x = x})
-    //       //.attr('x', x)
-    // })
-    //     .attr('id', `square${i}`)
-    //     .attr('fill', 'transparent')
-    //     .attr('stroke', 'black')
-    //     .attr('y', 30)
-    //     .attr('height', 30)
-    //     .attr('width', 40)
-    // }
-
-    // // const makeSquare = (start_x,i) => {
-    // //   d3.transition()
-    // //   .duration(500)
-    // //   .tween("squareTween", function () {
-    // //     const target_x = 300
-    // //     return function(t) {
-    // //       const distance = d3.interpolate(start_x, target_x)(t)
-    // //       renderSquare(distance, square_index)
-    // //     }
-    // //   })
-    // // }
-
-    // svg.selectAll("#rectButton")
-    // .data([null])
-    // .join(
-    //   (enter) => enter.append("rect")
-    // )
-    // .attr("id", 'rectButton')
-    // .attr('x', 60)
-    // .attr('y', 60)
-    // .attr('height', 30)
-    // .attr('width', 30)
-    // .attr('stroke', 'black')
-    // .on('mouseenter', () => {
-    //   console.log('click!')
-    //   renderSquare(0, 0)
-    //   renderSquare(300, 0)
-
-    // })
-    // .on('mouseleave', () => {
-    //   renderSquare(0, 0)
-    // })
-
-    // svg.selectAll("#rectButton2")
-    // .data([null])
-    // .join(
-    //   (enter) => enter.append("rect")
-    // )
-    // .attr("id", 'rectButton2')
-    // .attr('x', 90)
-    // .attr('y', 90)
-    // .attr('height', 30)
-    // .attr('width', 30)
-    // .attr('fill', 'cyan')
-    // .on('mouseenter', () => {
-    //   console.log('click!')
-    //   renderSquare(0, 1)
-
-    //   renderSquare(300, 1)
-    // })
-    // .on('mouseleave', () => {
-    //   renderSquare(0, 1)
-    // })
-  }, [])
 
   return(
     <div>
@@ -176,7 +86,6 @@ function Test(){
       style={{
         height: 300,
         width: 300,
-        transform: "translate(" + 300 / 2 + "," + 300 / 2 + ")",
       }}
     ></svg>
     </div>
