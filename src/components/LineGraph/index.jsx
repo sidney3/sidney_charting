@@ -195,53 +195,43 @@ function SizeOverTime({ h, w, data, dataPreview, setDataPreview }) {
         }
       })
 
-    // const x = d3.scaleBand()
-    //   .range([processed_data.bounds.x_min, processed_data.bounds.x_max])
-    //   .domain(ticks(processed_data.bounds.y_min, processed_data.bounds.y_max, X_DATA_POINTS))
-    //   .padding(0.2)
-
-    // svg.append('g')
-    // // .selectAll("#x-axis")
-    // //   .data([null])
-    // //   .join('g')
-    //   .attr('transform', `translate(0,${height})`)
-    //   .call(d3.axisBottom(x))
-    //   .selectAll('text')
-    //   .attr("transform", "translate(-10,0)rotate(-45)")
-    //   .style('text-anchor', 'end')
-      //.attr("transform", "translate(0," + h + ")")
 
     const y_axis_coords = ticks(
       DEFAULT_OFFSETS.y,
       h - DEFAULT_OFFSETS.y,
       Y_DATA_POINTS
     ).reverse()
+    console.log(processed_data.bounds)
+    const y = d3.scaleLinear()
+      .domain([processed_data.bounds.y_max, processed_data.bounds.y_min,])
+      .range([DEFAULT_OFFSETS.y, h - DEFAULT_OFFSETS.y])
     //for this we just need the minimum and maximum y mins and maxes
-    svg
-      .selectAll("#y-axis-datums")
-      .data(ticks(processed_data.bounds.y_min, processed_data.bounds.y_max, X_DATA_POINTS))
-      .join("text")
-      .text((d) => d)
-      .attr("id", "y-axis-datums")
-      .attr("x", DEFAULT_OFFSETS.x / 2)
-      .attr("y", (d, i) => y_axis_coords[i])
-      .style("text-anchor", "middle")
 
-    //same for this
-    const x_axis_coords = ticks(
-      DEFAULT_OFFSETS.x,
-      w - DEFAULT_OFFSETS.x,
-      Y_DATA_POINTS
-    )
     svg
-      .selectAll("#x-axis-datums")
-      .data(ticks(processed_data.bounds.x_min, processed_data.bounds.x_max, Y_DATA_POINTS))
-      .join("text")
+      .selectAll("#y-Axis")
+      .data([y])
+      .join("g")
+      .attr("id", "y-Axis")
+      .attr('transform', `translate(${DEFAULT_OFFSETS.x}, 0)`)
+      .call(d3.axisLeft(y))
+
+    
+    const x = d3.scaleLinear()
+      .domain([processed_data.bounds.x_min, processed_data.bounds.x_max])
+      .range([DEFAULT_OFFSETS.x, w - DEFAULT_OFFSETS.x])
+
+
+    svg
+      .selectAll("#x-Axis")
+      .data([x])
+      .join("g")
+      .attr("transform", `translate(0, ${h - DEFAULT_OFFSETS.y})`)
+      .attr("id", "x-Axis")
+      .call(d3.axisBottom(x))
+      .selectAll("text")
       .text((d) => unix_to_MDY(d))
-      .attr("id", "x-axis-datums")
-      .attr("x", (d, i) => x_axis_coords[i])
-      .attr("y", h - DEFAULT_OFFSETS.y / 2)
-      .style("text-anchor", "middle")
+      .attr("transform", "translate(-10,0)rotate(-45)")
+      .style("text-anchor", "end")
 
   }, [h, w, data, timeView])
 
