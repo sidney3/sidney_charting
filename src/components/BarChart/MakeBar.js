@@ -10,7 +10,7 @@ export class MakeBar {
    * Should also take in TODO name of args
    */
   static get_text_width(data){
-    return Math.max(BrowserText.getWidth(`Year: ${data.Name}`, 16), BrowserText.getWidth(`Cellared: ${data.Cellared}`, 16))
+    return Math.max(BrowserText.getWidth(`Year: ${data.Name}`, 18), BrowserText.getWidth(`Cellared: ${data.Cellared}`, 18))
   }
 
   /*
@@ -62,7 +62,7 @@ export class MakeBar {
 
     return line(path)
   }
-  static update_preview(svg, index, data, x, y, preview_frame_height){
+  static update_preview(svg, index, data, x, y, name, preview_frame_height){
     const previewGroup = svg.selectAll('#previewGroup').attr('opacity', 1)
 
     const bar_args = {
@@ -78,7 +78,7 @@ export class MakeBar {
       
     previewGroup.selectAll(`#previewTextTop`)
       .transition()
-      .text("Year: " + data[index].Name)
+      .text(`${name}: ${data[index].Name}`)
       .attr('x', x(data[index].Name) + x.bandwidth() / 2)
       .attr('y', y(data[index].Cellared) - preview_frame_height*0.3)
 

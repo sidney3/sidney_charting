@@ -3,7 +3,7 @@ import { MakeBar } from "./MakeBar"
 import * as d3 from "d3"
 import { GraphLine } from "../LineGraph/GraphLine"
 
-function BarChart({ total_height, total_width, data }) {
+function BarChart({ total_height, total_width, data, fieldname }) {
   const svgRef = useRef()
 
   d3.selection.prototype.moveToFront = function () {
@@ -132,7 +132,7 @@ function BarChart({ total_height, total_width, data }) {
           console.error('did not find the targeted data. See BarChart main component')
         }
         else{
-          MakeBar.update_preview(svg, focused_frame, data, x, y, preview_frame_height)
+          MakeBar.update_preview(svg, focused_frame, data, x, y, fieldname, preview_frame_height)
         }
       })
       
@@ -146,7 +146,7 @@ function BarChart({ total_height, total_width, data }) {
           console.error('did not find the targeted data. See BarChart main component')
         }
         else{
-          MakeBar.update_preview(svg, focused_frame, data, x, y, preview_frame_height)
+          MakeBar.update_preview(svg, focused_frame, data, x, y, fieldname, preview_frame_height)
         }
       })
       .transition()

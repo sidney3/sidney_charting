@@ -60,7 +60,7 @@ function CTCharts() {
   ])
 
   const [dataPreview, setDataPreview] = useState({ 0: 0, 1: 1 })
-
+  const [barChartDatumName, setBarChartDatumName] = useState("Year")
   const [barChartData, setBarChartData] = useState(wineByYear)
 
   //very temp idea lol
@@ -105,13 +105,16 @@ function CTCharts() {
       </div>
       <Test />
       <div>
-      <BarChart total_height={500} total_width={500} data={barChartData} />
+      <BarChart total_height={500} total_width={500} data={barChartData} fieldname={barChartDatumName}/>
       <button onClick={() => {
         if(barChartIndex % 2 === 0){
           setBarChartData(wineByCountryForBarChart)
+          setBarChartDatumName("Country")
         }
         else {
           setBarChartData(wineByYear)
+          setBarChartDatumName("Year")
+
         }
         setBarChartIndex((index) => index + 1)
       }}>
