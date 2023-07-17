@@ -161,71 +161,33 @@ export class GraphLine {
       .attr("height", params.chart_details.height - 2 * DEFAULT_OFFSETS.y)
       .attr("width", params.chart_details.width - 2 * DEFAULT_OFFSETS.x)
       .on("mousemove", function (d) {
-
-        //we try and get the y-coord of a line
-      
-        // for(let graph_index = 0;
-        //     graph_index < params.data.length;
-        //     graph_index += 1)
-        //     {
-        //       const line_path = svg.selectAll(`#linegraph${graph_index}`)
-
-        //       console.log("line found: ", line_path)
-        //       console.log("y found: ", locate_y(line_path, d.offsetX), "for index: ", graph_index)
-
-        //     }
-
-        //D3 is great - it will automatically give mouseover priority to one of the indices
-        if (params.states.labelHidden.get) {
-          params.states.labelHidden.set(false)
-        }
-
-        params.states.vertPreview.set(d.offsetX)
-
-        // for(
-        //   let graph_index = 0;
-        //   graph_index < params.data.length;
-        //   graph_index += 1
-        // ) {
-          //  const index_path = svg.selectAll(`#linegraph${graph_index}`)
-          //   const preview_y = locate_y(index_path, d.offsetX)
-          //   PreviewManager.update_preview(svg, graph_index, d.offsetX, preview_y, "Hello", 20)
-
-        // }
-
-        //we need to do this asyncronously as setState is an async function
-        //we iterate through our different "graphs" (datums)
-        const update_Preview = async () => {
-          for (
-            let graph_index = 0;
-            graph_index < params.data.length;
-            graph_index += 1
-          ) {
-            const data_point = PathManager.get_datum({
-              x_formula: params.data_details.formulae.x_formula,
-              pagePos: {
-                x: d.offsetX,
-                y: d.offsetY,
-              },
-              data: params.data[graph_index],
-            })
-
-            const index_path = svg.selectAll(`#linegraph${graph_index}`)
-            const preview_y = locate_y(index_path, d.offsetX)
-            PreviewManager.update_preview(svg, graph_index, d.offsetX, preview_y, data_point.datum, 40)
-            
-            
-            //update preview and also location
-            params.states.dataPreview.set((oldPreview) => {
-              const previewCopy = { ...oldPreview }
-              previewCopy[params.data_details.keys[graph_index]] = data_point.datum
-              return previewCopy
-            })
-            await new Promise((resolve) => setTimeout(resolve, 0)) // Add a delay to see the updates
-          }
-        }
-        update_Preview()
+        GraphLine.handle_mouseover(d.offsetX, d.offsetY, params, svg)
       })
+      .on("touchmove", (d) => {
+        const touch = d.touches[0]
+        console.log(touch)
+        GraphLine.handle_mouseover(touch.clientX, touch.clientY, params, svg)
+      })
+  }
+
+  static handle_mouseover(x, y, params, svg){
+    params.states.vertPreview.set(x)
+
+    for(let graph_index = 0; graph_index < params.data.length; graph_index += 1){
+      const data_point = PathManager.get_datum({
+        x_formula: params.data_details.formulae.x_formula,
+        pagePos: {
+          x:x,
+          y: y,
+        },
+        data: params.data[graph_index],
+      })
+
+      const index_path = svg.selectAll(`#linegraph${graph_index}`)
+      const preview_y = locate_y(index_path,x)
+      PreviewManager.update_preview(svg, graph_index, x, preview_y, data_point.datum, 40)
+    
+    }
   }
 
   /*

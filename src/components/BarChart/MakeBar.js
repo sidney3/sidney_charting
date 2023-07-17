@@ -100,7 +100,7 @@ export class MakeBar {
       .data([null])
       .join('path')
       .attr('id', 'previewPath')
-      .attr('fill', 'transparent')
+      .attr('fill', 'white')
       .attr('stroke', 'black')
 
       previewGroup.selectAll(`#previewTextTop`)
@@ -109,6 +109,7 @@ export class MakeBar {
       .attr('id', 'previewTextTop')
       .attr("text-anchor", "middle")
       .attr("font-size", 14)
+      .raise()
 
       previewGroup.selectAll(`#previewTextBottom`)
       .data([null])
@@ -116,5 +117,73 @@ export class MakeBar {
       .attr('id', 'previewTextBottom')
       .attr("text-anchor", "middle")
       .attr("font-size", 14)
+      .raise()
+  }
+  
+  static show_expander(svg, index, width){
+    const previewGroup = svg.selectAll(`#previewGroup${index}`)
+
+    previewGroup.selectAll('#previewBox')
+      .transition()
+      .duration(300)
+      .attr('width', width)
+      previewGroup.selectAll('text')
+      .transition()
+      .duration(300)
+      .attr('opacity', 1)
+
+  }
+  static hide_expander(svg, index) {
+    const previewGroup = svg.selectAll(`#previewGroup${index}`)
+
+    previewGroup.selectAll('#previewBox')
+      .transition()
+      .duration(300)
+      .attr('width', 0)
+    previewGroup.selectAll('text')
+      .transition()
+      .duration(300)
+      .attr('opacity', 0)
+  }
+
+  static make_expander(svg, index, top_text, height, x, y){
+    const previewGroup = svg.selectAll(`#previewGroup${index}`)
+    .data([null])
+    .join('g')
+    .attr('id', `previewGroup${index}`)
+    
+    previewGroup.selectAll(`#previewBox`)
+      .data([null])
+      .join('rect')
+      .attr('id', `previewBox`)
+      .attr('height', height)
+      .attr('width', 0)
+      .attr('fill', 'tan')
+      .attr('x', x)
+      .attr('y', y)
+
+    previewGroup.selectAll(`#previewTextTop`)
+      .data([null])
+      .join('text')
+      .attr('id', `previewTextTop`)
+      .attr("text-anchor", "start")
+      .attr("font-size", 14)
+      .text(top_text)
+      .attr('x', x + 2)
+      .attr('y', y + height * .58)
+      .attr('opacity', 0)
+      .raise()
+
+    // previewGroup.selectAll(`#previewTextBottom`)
+    //   .data([null])
+    //   .join('text')
+    //   .attr('id', `previewTextBottom`)
+    //   .attr("text-anchor", "start")
+    //   .attr("font-size", 14)
+    //   .attr('x', x + 2)
+    //   .attr('y', y + height * .7)
+    //   .text(bottom_text)
+    //   .attr('opacity', 0)
+    //   .raise()
   }
 }
