@@ -22,7 +22,14 @@ function BarChart({ total_height, total_width, data, fieldname }) {
   
   useEffect(() => {
 
-    let data = [['Nice', 3], ['Marseille', 13],['Champagne', 30]]
+    console.log("data", data)
+
+    const transformed_data = data.map((d) => [d.Name, d.Cellared])
+
+    const colorRange = d3
+      .scaleLinear()
+      .domain([0, data.length])
+      .range(["#851b48", "#e9a363"])
 
     const width = total_width - 2*DEFAULT_OFFSETS.x
     const height = total_height - 2*DEFAULT_OFFSETS.y
@@ -37,7 +44,7 @@ function BarChart({ total_height, total_width, data, fieldname }) {
 
       const y = d3.scaleBand()
         .range([0, height])
-        .domain(data.map((d) => d[0]))
+        .domain(transformed_data.map((d) => d[0]))
         .padding(.4)
       
       
@@ -50,11 +57,13 @@ function BarChart({ total_height, total_width, data, fieldname }) {
         .selectAll('text')
         .attr('font-size', 20)
         .style('text-anchor', 'start')
-        .attr('transform', `translate(4.5, ${-y.bandwidth() + 23})`)
+        .attr('transform', `translate(4.5, ${-y.bandwidth()*.73})`)
 
         const x = d3.scaleLinear()
-        .domain([0, Math.max(...data.map((d) => d[1])) + 5])
+        .domain([0, Math.max(...transformed_data.map((d) => d[1]))*1.2])
         .range([0, width])
+
+        console.log("inverted!: ", x.invert(45))
 
         // svg.selectAll('#x-Axis')
         // .data([x])
@@ -71,17 +80,17 @@ function BarChart({ total_height, total_width, data, fieldname }) {
         data.forEach((d,i) => {clicked[i] = false})
 
         svg.selectAll("myRect")
-        .data(data)
+        .data(transformed_data)
         .enter()
         .append("rect")
         .attr("x", x(0) )
         .attr("y", function(d) { return y(d[0]); })
         .attr("width", function(d) { return x(d[1]); })
         .attr("height", y.bandwidth() )
-        .attr("fill", "#69b3a2")
+        .attr("fill", (d, i) => colorRange(i))
         .on('click', (d,i) => {
-          console.log(d, i, data.findIndex((d) => d === i))
-          const box_index = data.findIndex((d) => d === i)
+          console.log(d, i, transformed_data.findIndex((d) => d === i))
+          const box_index = transformed_data.findIndex((d) => d === i)
           
           if(clicked[box_index]) {
             console.log("hiding")
@@ -97,7 +106,7 @@ function BarChart({ total_height, total_width, data, fieldname }) {
           
         })
 
-      data.forEach((d, i) => {
+      transformed_data.forEach((d, i) => {
         const x_pos =  x(d[1])
         const y_pos = y(d[0])
         MakeBar.make_expander(svg, i, `Cellared: ${d[1]}`, y.bandwidth(), x_pos, y_pos)

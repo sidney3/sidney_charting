@@ -158,7 +158,8 @@ export class MakeBar {
       .attr('id', `previewBox`)
       .attr('height', height)
       .attr('width', 0)
-      .attr('fill', 'tan')
+      .attr('opacity', .9)
+      .attr('fill', 'black')
       .attr('x', x)
       .attr('y', y)
 
@@ -169,8 +170,9 @@ export class MakeBar {
       .attr("text-anchor", "start")
       .attr("font-size", 14)
       .text(top_text)
+      .attr('fill', 'white')
       .attr('x', x + 2)
-      .attr('y', y + height * .58)
+      .attr('y', y + height * .64)
       .attr('opacity', 0)
       .raise()
 

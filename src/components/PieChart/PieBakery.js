@@ -289,6 +289,7 @@ export class PieBakery {
           const text_angle = ((d.startAngle + d.endAngle) / 2) * (180 / Math.PI)
           return 0 <= text_angle && 180 >= text_angle ? "end" : "start"
         })
+        .style("pointer-events", "none")
         .attr(`id`, `pieText${PieID}`)
         .style("font-size", 10)
         .attr('fill', 'white')

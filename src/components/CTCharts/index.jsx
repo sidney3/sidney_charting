@@ -6,6 +6,7 @@ import { default_key_to_color } from "../../utils"
 import PieChart from "../PieChart/oldIndex"
 import PieCharts from "../PieChart"
 import BarChart from "../BarChart"
+import { Dropdown } from "./Dropdown"
 import "./index.css"
 
 const CellaredSOTdata = require("./mock_data/bottlesovertime.json").map((d) => [
@@ -79,6 +80,7 @@ function CTCharts() {
 
   return (
     <div>
+      <Dropdown />
       <div>
         <RenderDataPreview dataPreview={dataPreview} dataArr={dataArr} />
         
