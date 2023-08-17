@@ -1,1 +1,3 @@
-If you want to run just run `npm install` from main directory and `npm run start` from same terminal
+## Full feature available [here](https:cellartracker.com/charts.asp) (behind paywall unfortunately)
+
+## Demo of the feature available [here](https://youtu.be/ex-USb-4XoM)
